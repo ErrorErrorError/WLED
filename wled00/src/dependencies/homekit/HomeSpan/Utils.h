@@ -30,6 +30,16 @@
 #include <Arduino.h>
 #include <driver/timer.h>
 
+#ifdef ESPHOMEKIT_DEBUG
+  #pragma message "Homekit 2.7.0 debug mode"
+  #define EHK_DEBUG(x)  Serial.print (x)
+  #define EHK_DEBUGLN(x) Serial.println (x)
+  #define EHK_DEBUGF(x, args...) Serial.printf(x, args)
+#else
+  #define EHK_DEBUG(x)
+  #define EHK_DEBUGLN(x)
+  #define EHK_DEBUGF(x, args...)
+#endif
 
 namespace Utils {
 
@@ -51,9 +61,9 @@ struct TempBuffer {
     nBytes=len*sizeof(bufType);
     buf=(bufType *)heap_caps_malloc(nBytes,MALLOC_CAP_8BIT);
     if(buf==NULL){
-      Serial.print("\n\n*** FATAL ERROR: Requested allocation of ");
-      Serial.print(nBytes);
-      Serial.print(" bytes failed.  Program Halting.\n\n");
+      EHK_DEBUG("\n\n*** FATAL ERROR: Requested allocation of ");
+      EHK_DEBUG(nBytes);
+      EHK_DEBUG(" bytes failed.  Program Halting.\n\n");
       while(1);
     }
    }

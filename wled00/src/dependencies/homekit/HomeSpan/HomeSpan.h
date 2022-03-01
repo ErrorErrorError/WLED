@@ -24,7 +24,10 @@
  *  SOFTWARE.
  *  
  ********************************************************************************/
- 
+
+// This is a stripped down version of https://github.com/HomeSpan/HomeSpan
+// Commit: 72b91af24a2e3f2b4657be4658c8334590637a6c
+
 #pragma once
 
 #ifndef ARDUINO_ARCH_ESP32
@@ -511,7 +514,7 @@ struct SpanCharacteristic{
   void setString(const char *val){
 
     if((perms & EV) == 0){
-      Serial.printf("\n*** WARNING:  Attempt to update Characteristic::%s with setVal() ignored.  No NOTIFICATION permission on this characteristic\n\n",hapName);
+      EHK_DEBUGF("\n*** WARNING:  Attempt to update Characteristic::%s with setVal() ignored.  No NOTIFICATION permission on this characteristic\n\n",hapName);
       return;
     }
 
@@ -537,12 +540,12 @@ struct SpanCharacteristic{
   template <typename T> void setVal(T val, boolean notify=true){
 
     if((perms & EV) == 0){
-      Serial.printf("\n*** WARNING:  Attempt to update Characteristic::%s with setVal() ignored.  No NOTIFICATION permission on this characteristic\n\n",hapName);
+      EHK_DEBUGF("\n*** WARNING:  Attempt to update Characteristic::%s with setVal() ignored.  No NOTIFICATION permission on this characteristic\n\n",hapName);
       return;
     }
 
     if(val < uvGet<T>(minValue) || val > uvGet<T>(maxValue)){
-      Serial.printf("\n*** WARNING:  Attempt to update Characteristic::%s with setVal(%.4f) is out of range [%.4f,%.4f].  This may cause device to become non-reponsive!\n\n",
+      EHK_DEBUGF("\n*** WARNING:  Attempt to update Characteristic::%s with setVal(%.4f) is out of range [%.4f,%.4f].  This may cause device to become non-reponsive!\n\n",
       hapName,(double)val,uvGet<double>(minValue), uvGet<double>(maxValue));
     }
    
@@ -620,7 +623,7 @@ struct [[deprecated("Please use Characteristic::setRange() method instead.")]] S
 
 ///////////////////////////////
 
-struct SpanButton{
+struct SpanButton {
 
   enum {
     SINGLE=0,

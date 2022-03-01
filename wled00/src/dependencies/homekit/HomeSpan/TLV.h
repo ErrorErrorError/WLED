@@ -78,9 +78,9 @@ template<class tagType, int maxTags>
 int TLV<tagType, maxTags>::create(tagType tag, int maxLen, const char *name){
   
   if(numTags==maxTags){
-    Serial.print("\n*** ERROR: Can't create new TLC tag type with name='");
-    Serial.print(name);
-    Serial.print("' - exceeded number of records reserved\n\n");
+    EHK_DEBUG("\n*** ERROR: Can't create new TLC tag type with name='");
+    EHK_DEBUG(name);
+    EHK_DEBUG("' - exceeded number of records reserved\n\n");
     return(0);
   }
 
@@ -199,17 +199,17 @@ void TLV<tagType, maxTags>::print(){
   for(int i=0;i<numTags;i++){
     
     if(tlv[i].len>0){
-      Serial.print(tlv[i].name);
-      Serial.print("(");
-      Serial.print(tlv[i].len);
-      Serial.print(") ");
+      EHK_DEBUG(tlv[i].name);
+      EHK_DEBUG("(");
+      EHK_DEBUG(tlv[i].len);
+      EHK_DEBUG(") ");
       
       for(int j=0;j<tlv[i].len;j++){
         sprintf(buf,"%02X",tlv[i].val[j]);
-        Serial.print(buf);
+        EHK_DEBUG(buf);
        }
 
-      Serial.print("\n");
+      EHK_DEBUG("\n");
 
     } // len>0
   } // loop over all TLVs

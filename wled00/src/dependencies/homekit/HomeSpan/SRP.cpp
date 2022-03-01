@@ -273,9 +273,9 @@ void SRP6A::print(mbedtls_mpi *mpi){
 
   mbedtls_mpi_write_string(mpi,16,sBuf,2000,&sLen);
   
-  Serial.print((sLen-1)/2);         // subtract 1 for null-terminator, and then divide by 2 to get number of bytes (e.g. 4F = 2 characters, but represents just one mpi byte)
-  Serial.print(" ");
-  Serial.println(sBuf);
+  EHK_DEBUG((sLen-1)/2);         // subtract 1 for null-terminator, and then divide by 2 to get number of bytes (e.g. 4F = 2 characters, but represents just one mpi byte)
+  EHK_DEBUG(" ");
+  EHK_DEBUGLN(sBuf);
 }
 
 //////////////////////////////////////

@@ -71,56 +71,56 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 
   delay(2000);
 
-  Serial.print("\n************************************************************\n"
+  EHK_DEBUG("\n************************************************************\n"
                  "Welcome to HomeSpan!\n"
                  "Apple HomeKit for the Espressif ESP-32 WROOM and Arduino IDE\n"
                  "************************************************************\n\n"
                  "** Please ensure serial monitor is set to transmit <newlines>\n\n");
 
-  Serial.print("Message Logs:     Level ");
-  Serial.print(logLevel);  
-  Serial.print("\nStatus LED:       Pin ");
+  EHK_DEBUG("Message Logs:     Level ");
+  EHK_DEBUG(logLevel);  
+  EHK_DEBUG("\nStatus LED:       Pin ");
   if(statusPin>=0){
-    Serial.print(statusPin);
+    EHK_DEBUG(statusPin);
     if(autoOffLED>0)
-      Serial.printf("  (Auto Off=%d sec)",autoOffLED);
+      EHK_DEBUGF("  (Auto Off=%d sec)",autoOffLED);
   }
   else
-    Serial.print("-  *** WARNING: Status LED Pin is UNDEFINED");
-  Serial.print("\nDevice Control:   Pin ");
+    EHK_DEBUG("-  *** WARNING: Status LED Pin is UNDEFINED");
+  EHK_DEBUG("\nDevice Control:   Pin ");
   if(controlPin>=0)
-    Serial.print(controlPin);
+    EHK_DEBUG(controlPin);
   else
-    Serial.print("-  *** WARNING: Device Control Pin is UNDEFINED");
-  Serial.print("\nHomeSpan Version: ");
-  Serial.print(HOMESPAN_VERSION);
-  Serial.print("\nArduino-ESP Ver.: ");
-  Serial.print(ARDUINO_ESP_VERSION);
-  Serial.printf("\nESP-IDF Version:  %d.%d.%d",ESP_IDF_VERSION_MAJOR,ESP_IDF_VERSION_MINOR,ESP_IDF_VERSION_PATCH);
-  Serial.printf("\nESP32 Chip:       %s Rev %d %s-core %dMB Flash", ESP.getChipModel(),ESP.getChipRevision(),
+    EHK_DEBUG("-  *** WARNING: Device Control Pin is UNDEFINED");
+  EHK_DEBUG("\nHomeSpan Version: ");
+  EHK_DEBUG(HOMESPAN_VERSION);
+  EHK_DEBUG("\nArduino-ESP Ver.: ");
+  EHK_DEBUG(ARDUINO_ESP_VERSION);
+  EHK_DEBUGF("\nESP-IDF Version:  %d.%d.%d",ESP_IDF_VERSION_MAJOR,ESP_IDF_VERSION_MINOR,ESP_IDF_VERSION_PATCH);
+  EHK_DEBUGF("\nESP32 Chip:       %s Rev %d %s-core %dMB Flash", ESP.getChipModel(),ESP.getChipRevision(),
                 ESP.getChipCores()==1?"single":"dual",ESP.getFlashChipSize()/1024/1024);
   
   #ifdef ARDUINO_VARIANT
-    Serial.print("\nESP32 Board:      ");
-    Serial.print(ARDUINO_VARIANT);
+    EHK_DEBUG("\nESP32 Board:      ");
+    EHK_DEBUG(ARDUINO_VARIANT);
   #endif
   
-  Serial.printf("\nPWM Resources:    %d channels, %d timers, max %d-bit duty resolution",
+  EHK_DEBUGF("\nPWM Resources:    %d channels, %d timers, max %d-bit duty resolution",
                 LEDC_SPEED_MODE_MAX*LEDC_CHANNEL_MAX,LEDC_SPEED_MODE_MAX*LEDC_TIMER_MAX,LEDC_TIMER_BIT_MAX-1);
 
-  Serial.printf("\nSodium Version:   %s  Lib %d.%d",sodium_version_string(),sodium_library_version_major(),sodium_library_version_minor());
+  EHK_DEBUGF("\nSodium Version:   %s  Lib %d.%d",sodium_version_string(),sodium_library_version_major(),sodium_library_version_minor());
   char mbtlsv[64];
   mbedtls_version_get_string_full(mbtlsv);
-  Serial.printf("\nMbedTLS Version:  %s",mbtlsv);
+  EHK_DEBUGF("\nMbedTLS Version:  %s",mbtlsv);
 
-  Serial.print("\nSketch Compiled:  ");
-  Serial.print(__DATE__);
-  Serial.print(" ");
-  Serial.print(__TIME__);
+  EHK_DEBUG("\nSketch Compiled:  ");
+  EHK_DEBUG(__DATE__);
+  EHK_DEBUG(" ");
+  EHK_DEBUG(__TIME__);
 
-  Serial.print("\n\nDevice Name:      ");
-  Serial.print(displayName);  
-  Serial.print("\n\n");
+  EHK_DEBUG("\n\nDevice Name:      ");
+  EHK_DEBUG(displayName);  
+  EHK_DEBUG("\n\n");
 }  // begin
 
 ///////////////////////////////
@@ -128,7 +128,7 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 void Span::poll() {
 
   if(!strlen(category)){
-    Serial.print("\n** FATAL ERROR: Cannot run homeSpan.poll() without an initial call to homeSpan.begin()!\n** PROGRAM HALTED **\n\n");
+    EHK_DEBUG("\n** FATAL ERROR: Cannot run homeSpan.poll() without an initial call to homeSpan.begin()!\n** PROGRAM HALTED **\n\n");
     while(1);    
   }
 
@@ -151,26 +151,26 @@ void Span::poll() {
     processSerialCommand("i");        // print homeSpan configuration info
    
     if(nFatalErrors>0){
-      Serial.print("\n*** PROGRAM HALTED DUE TO ");
-      Serial.print(nFatalErrors);
-      Serial.print(" FATAL ERROR");
+      EHK_DEBUG("\n*** PROGRAM HALTED DUE TO ");
+      EHK_DEBUG(nFatalErrors);
+      EHK_DEBUG(" FATAL ERROR");
       if(nFatalErrors>1)
-        Serial.print("S");
-      Serial.print(" IN CONFIGURATION! ***\n\n");
+        EHK_DEBUG("S");
+      EHK_DEBUG(" IN CONFIGURATION! ***\n\n");
       while(1);
     }    
 
-    Serial.print("\n");
+    EHK_DEBUG("\n");
         
     HAPClient::init();        // read NVS and load HAP settings  
 
     if(!strlen(network.wifiData.ssid)){
-      Serial.print("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
-      Serial.print("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
+      EHK_DEBUG("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
+      EHK_DEBUG("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
     }
   
-    Serial.print(displayName);
-    Serial.print(" is READY!\n\n");
+    EHK_DEBUG(displayName);
+    EHK_DEBUG(" is READY!\n\n");
     isInitialized=true;
   } // isInitialized
 
@@ -270,7 +270,7 @@ void Span::checkConnect(){
     if(WiFi.status()==WL_CONNECTED)
       return;
       
-    Serial.print("\n\n*** WiFi Connection Lost!\n");      // losing and re-establishing connection has not been tested
+    EHK_DEBUG("\n\n*** WiFi Connection Lost!\n");      // losing and re-establishing connection has not been tested
     connected=false;
     waitTime=60000;
     alarmConnect=0;
@@ -286,16 +286,16 @@ void Span::checkConnect(){
       waitTime*=2;
       
     if(waitTime==32000){
-      Serial.print("\n*** Can't connect to ");
-      Serial.print(network.wifiData.ssid);
-      Serial.print(".  You may type 'W <return>' to re-configure WiFi, or 'X <return>' to erase WiFi credentials.  Will try connecting again in 60 seconds.\n\n");
+      EHK_DEBUG("\n*** Can't connect to ");
+      EHK_DEBUG(network.wifiData.ssid);
+      EHK_DEBUG(".  You may type 'W <return>' to re-configure WiFi, or 'X <return>' to erase WiFi credentials.  Will try connecting again in 60 seconds.\n\n");
       waitTime=60000;
     } else {    
-      Serial.print("Trying to connect to ");
-      Serial.print(network.wifiData.ssid);
-      Serial.print(".  Waiting ");
-      Serial.print(waitTime/1000);
-      Serial.print(" second(s) for response...\n");
+      EHK_DEBUG("Trying to connect to ");
+      EHK_DEBUG(network.wifiData.ssid);
+      EHK_DEBUG(".  Waiting ");
+      EHK_DEBUG(waitTime/1000);
+      EHK_DEBUG(" second(s) for response...\n");
       WiFi.begin(network.wifiData.ssid,network.wifiData.pwd);
     }
 
@@ -306,11 +306,11 @@ void Span::checkConnect(){
 
   connected=true;
 
-  Serial.print("Successfully connected to ");
-  Serial.print(network.wifiData.ssid);
-  Serial.print("! IP Address: ");
-  Serial.print(WiFi.localIP());
-  Serial.print("\n");
+  EHK_DEBUG("Successfully connected to ");
+  EHK_DEBUG(network.wifiData.ssid);
+  EHK_DEBUG("! IP Address: ");
+  EHK_DEBUG(WiFi.localIP());
+  EHK_DEBUG("\n");
 
   char id[18];                              // create string version of Accessory ID for MDNS broadcast
   memcpy(id,HAPClient::accessory.ID,17);    // copy ID bytes
@@ -336,24 +336,24 @@ void Span::checkConnect(){
   sscanf(hostName,"%[A-Za-z0-9-]",d);
   
   if(strlen(hostName)>255|| hostName[0]=='-' || hostName[strlen(hostName)-1]=='-' || strlen(hostName)!=strlen(d)){
-    Serial.printf("\n*** Error:  Can't start MDNS due to invalid hostname '%s'.\n",hostName);
-    Serial.print("*** Hostname must consist of 255 or less alphanumeric characters or a hyphen, except that the hyphen cannot be the first or last character.\n");
-    Serial.print("*** PROGRAM HALTED!\n\n");
+    EHK_DEBUGF("\n*** Error:  Can't start MDNS due to invalid hostname '%s'.\n",hostName);
+    EHK_DEBUG("*** Hostname must consist of 255 or less alphanumeric characters or a hyphen, except that the hyphen cannot be the first or last character.\n");
+    EHK_DEBUG("*** PROGRAM HALTED!\n\n");
     while(1);
   }
     
-  Serial.print("\nStarting MDNS...\n\n");
-  Serial.print("HostName:      ");
-  Serial.print(hostName);
-  Serial.print(".local:");
-  Serial.print(tcpPortNum);
-  Serial.print("\nDisplay Name:  ");
-  Serial.print(displayName);
-  Serial.print("\nModel Name:    ");
-  Serial.print(modelName);
-  Serial.print("\nSetup ID:      ");
-  Serial.print(qrID);
-  Serial.print("\n\n");
+  EHK_DEBUG("\nStarting MDNS...\n\n");
+  EHK_DEBUG("HostName:      ");
+  EHK_DEBUG(hostName);
+  EHK_DEBUG(".local:");
+  EHK_DEBUG(tcpPortNum);
+  EHK_DEBUG("\nDisplay Name:  ");
+  EHK_DEBUG(displayName);
+  EHK_DEBUG("\nModel Name:    ");
+  EHK_DEBUG(modelName);
+  EHK_DEBUG("\nSetup ID:      ");
+  EHK_DEBUG(qrID);
+  EHK_DEBUG("\n\n");
 
   MDNS.begin(hostName);                         // set server host name (.local implied)
   MDNS.setInstanceName(displayName);            // set server display name
@@ -393,14 +393,14 @@ void Span::checkConnect(){
   mbedtls_base64_encode((uint8_t *)setupHash,9,&len,hashOutput,4);    // Step 3: Encode the first 4 bytes of hashOutput in base64, which results in an 8-character, null-terminated, setupHash
   mdns_service_txt_item_set("_hap","_tcp","sh",setupHash);            // Step 4: broadcast the resulting Setup Hash
 
-  Serial.printf("Starting HAP Server on port %d supporting %d simultaneous HomeKit Controller Connections...\n",tcpPortNum,maxConnections);
+  EHK_DEBUGF("Starting HAP Server on port %d supporting %d simultaneous HomeKit Controller Connections...\n",tcpPortNum,maxConnections);
 
   hapServer->begin();
 
-  Serial.print("\n");
+  EHK_DEBUG("\n");
 
   if(!HAPClient::nAdminControllers()){
-    Serial.print("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
+    EHK_DEBUG("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
   }
 
   if(wifiCallback)
@@ -429,48 +429,48 @@ void Span::processSerialCommand(const char *c){
 
     case 's': {    
       
-      Serial.print("\n*** HomeSpan Status ***\n\n");
+      EHK_DEBUG("\n*** HomeSpan Status ***\n\n");
 
-      Serial.print("IP Address:        ");
-      Serial.print(WiFi.localIP());
-      Serial.print("\n\n");
-      Serial.print("Accessory ID:      ");
+      EHK_DEBUG("IP Address:        ");
+      EHK_DEBUG(WiFi.localIP());
+      EHK_DEBUG("\n\n");
+      EHK_DEBUG("Accessory ID:      ");
       HAPClient::charPrintRow(HAPClient::accessory.ID,17);
-      Serial.print("                               LTPK: ");
+      EHK_DEBUG("                               LTPK: ");
       HAPClient::hexPrintRow(HAPClient::accessory.LTPK,32);
-      Serial.print("\n");
+      EHK_DEBUG("\n");
 
       HAPClient::printControllers();
-      Serial.print("\n");
+      EHK_DEBUG("\n");
 
       for(int i=0;i<maxConnections;i++){
-        Serial.print("Connection #");
-        Serial.print(i);
-        Serial.print(" ");
+        EHK_DEBUG("Connection #");
+        EHK_DEBUG(i);
+        EHK_DEBUG(" ");
         if(hap[i]->client){
       
-          Serial.print(hap[i]->client.remoteIP());
-          Serial.print(" on Socket ");
-          Serial.print(hap[i]->client.fd()-LWIP_SOCKET_OFFSET+1);
-          Serial.print("/");
-          Serial.print(CONFIG_LWIP_MAX_SOCKETS);
+          EHK_DEBUG(hap[i]->client.remoteIP());
+          EHK_DEBUG(" on Socket ");
+          EHK_DEBUG(hap[i]->client.fd()-LWIP_SOCKET_OFFSET+1);
+          EHK_DEBUG("/");
+          EHK_DEBUG(CONFIG_LWIP_MAX_SOCKETS);
           
           if(hap[i]->cPair){
-            Serial.print("  ID=");
+            EHK_DEBUG("  ID=");
             HAPClient::charPrintRow(hap[i]->cPair->ID,36);
-            Serial.print(hap[i]->cPair->admin?"   (admin)":" (regular)");
+            EHK_DEBUG(hap[i]->cPair->admin?"   (admin)":" (regular)");
           } else {
-            Serial.print("  (unverified)");
+            EHK_DEBUG("  (unverified)");
           }
       
         } else {
-          Serial.print("(unconnected)");
+          EHK_DEBUG("(unconnected)");
         }
 
-        Serial.print("\n");
+        EHK_DEBUG("\n");
       }
 
-      Serial.print("\n*** End Status ***\n\n");
+      EHK_DEBUG("\n*** End Status ***\n\n");
     } 
     break;
 
@@ -478,13 +478,13 @@ void Span::processSerialCommand(const char *c){
       TempBuffer <char> qBuf(sprintfAttributes(NULL)+1);
       sprintfAttributes(qBuf.buf);  
 
-      Serial.print("\n*** Attributes Database: size=");
-      Serial.print(qBuf.len()-1);
-      Serial.print("  configuration=");
-      Serial.print(hapConfig.configNumber);
-      Serial.print(" ***\n\n");
+      EHK_DEBUG("\n*** Attributes Database: size=");
+      EHK_DEBUG(qBuf.len()-1);
+      EHK_DEBUG("  configuration=");
+      EHK_DEBUG(hapConfig.configNumber);
+      EHK_DEBUG(" ***\n\n");
       prettyPrint(qBuf.buf);
-      Serial.print("\n*** End Database ***\n\n");
+      EHK_DEBUG("\n*** End Database ***\n\n");
     }
     break;
 
@@ -495,15 +495,15 @@ void Span::processSerialCommand(const char *c){
   
       if(strlen(s)==4 && strlen(tBuf)==4){
         sprintf(qrID,"%s",tBuf);
-        Serial.print("\nChanging default Setup ID for QR Code to: '");
-        Serial.print(qrID);
-        Serial.print("'.  Will take effect after next restart.\n\n");
+        EHK_DEBUG("\nChanging default Setup ID for QR Code to: '");
+        EHK_DEBUG(qrID);
+        EHK_DEBUG("'.  Will take effect after next restart.\n\n");
         nvs_set_str(HAPClient::hapNVS,"SETUPID",qrID);                           // update data
         nvs_commit(HAPClient::hapNVS);          
       } else {
-        Serial.print("\n*** Invalid request to change Setup ID for QR Code to: '");
-        Serial.print(s);
-        Serial.print("'.  Setup ID must be exactly 4 alphanumeric characters (0-9, A-Z, and a-z).\n\n");  
+        EHK_DEBUG("\n*** Invalid request to change Setup ID for QR Code to: '");
+        EHK_DEBUG(s);
+        EHK_DEBUG("'.  Setup ID must be exactly 4 alphanumeric characters (0-9, A-Z, and a-z).\n\n");  
       }        
     }
     break;
@@ -520,22 +520,22 @@ void Span::processSerialCommand(const char *c){
       sscanf(c+1," %9[0-9]",setupCode);
 
       if(strlen(setupCode)!=8){
-        Serial.print("\n*** Invalid request to change Setup Code.  Code must be exactly 8 digits.\n\n");
+        EHK_DEBUG("\n*** Invalid request to change Setup Code.  Code must be exactly 8 digits.\n\n");
       } else
 
       if(!network.allowedCode(setupCode)){
-        Serial.print("\n*** Invalid request to change Setup Code.  Code too simple.\n\n");
+        EHK_DEBUG("\n*** Invalid request to change Setup Code.  Code too simple.\n\n");
       } else {
         sprintf(buf,"\n\nGenerating SRP verification data for new Setup Code: %.3s-%.2s-%.3s ... ",setupCode,setupCode+3,setupCode+5);
-        Serial.print(buf);
+        EHK_DEBUG(buf);
         HAPClient::srp.createVerifyCode(setupCode,verifyData.verifyCode,verifyData.salt);                         // create verification code from default Setup Code and random salt
         nvs_set_blob(HAPClient::srpNVS,"VERIFYDATA",&verifyData,sizeof(verifyData));                              // update data
         nvs_commit(HAPClient::srpNVS);                                                                            // commit to NVS
-        Serial.print("New Code Saved!\n");
+        EHK_DEBUG("New Code Saved!\n");
 
-        Serial.print("Setup Payload for Optional QR Code: ");
-        Serial.print(qrCode.get(atoi(setupCode),qrID,atoi(category)));
-        Serial.print("\n\n");        
+        EHK_DEBUG("Setup Payload for Optional QR Code: ");
+        EHK_DEBUG(qrCode.get(atoi(setupCode),qrID,atoi(category)));
+        EHK_DEBUG("\n\n");        
       }            
     }
     break;
@@ -544,7 +544,7 @@ void Span::processSerialCommand(const char *c){
       HAPClient::removeControllers();                                                                           // clear all Controller data  
       nvs_set_blob(HAPClient::hapNVS,"CONTROLLERS",HAPClient::controllers,sizeof(HAPClient::controllers));      // update data
       nvs_commit(HAPClient::hapNVS);                                                                            // commit to NVS
-      Serial.print("\n*** HomeSpan Pairing Data DELETED ***\n\n");
+      EHK_DEBUG("\n*** HomeSpan Pairing Data DELETED ***\n\n");
 
       for(int i=0;i<maxConnections;i++){     // loop over all connection slots
         if(hap[i]->client){                    // if slot is connected
@@ -555,19 +555,19 @@ void Span::processSerialCommand(const char *c){
         }
       }
       
-      Serial.print("\nDEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
+      EHK_DEBUG("\nDEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
       mdns_service_txt_item_set("_hap","_tcp","sf","1");                                                        // set Status Flag = 1 (Table 6-8)
       
       if(strlen(network.wifiData.ssid)==0)
-        Serial.print("\nNetwork wifi not set up.");
+        EHK_DEBUG("\nNetwork wifi not set up.");
       else
-        Serial.print("\nNetwork wifi is set up.");
+        EHK_DEBUG("\nNetwork wifi is set up.");
     }
     break;
 
     case 'A': {
       if(strlen(network.wifiData.ssid)>0){
-        Serial.print("*** Stopping all current WiFi services...\n\n");
+        EHK_DEBUG("*** Stopping all current WiFi services...\n\n");
         hapServer->end();
         MDNS.end();
         WiFi.disconnect();
@@ -578,10 +578,10 @@ void Span::processSerialCommand(const char *c){
         sprintf(s,"S%s",network.setupCode);
         processSerialCommand(s);
       } else {
-        Serial.print("*** Setup Code Unchanged\n");
+        EHK_DEBUG("*** Setup Code Unchanged\n");
       }
 
-      Serial.print("\n*** Re-starting ***\n\n");
+      EHK_DEBUG("\n*** Re-starting ***\n\n");
       delay(1000);
       ESP.restart();                                                                             // re-start device   
     }
@@ -590,14 +590,14 @@ void Span::processSerialCommand(const char *c){
     case 'V': {
       nvs_erase_all(charNVS);
       nvs_commit(charNVS);      
-      Serial.print("\n*** Values for all saved Characteristics erased!\n\n");
+      EHK_DEBUG("\n*** Values for all saved Characteristics erased!\n\n");
     }
     break;
 
     case 'H': {
       nvs_erase_all(HAPClient::hapNVS);
       nvs_commit(HAPClient::hapNVS);      
-      Serial.print("\n*** HomeSpan Device ID and Pairing Data DELETED!  Restarting...\n\n");
+      EHK_DEBUG("\n*** HomeSpan Device ID and Pairing Data DELETED!  Restarting...\n\n");
       delay(1000);
       ESP.restart();
     }
@@ -608,7 +608,7 @@ void Span::processSerialCommand(const char *c){
       nvs_commit(HAPClient::hapNVS);      
       nvs_erase_all(charNVS);
       nvs_commit(charNVS);   
-      Serial.print("\n*** FACTORY RESET!  Restarting...\n\n");
+      EHK_DEBUG("\n*** FACTORY RESET!  Restarting...\n\n");
       delay(1000);
       ESP.restart();
     }
@@ -623,9 +623,9 @@ void Span::processSerialCommand(const char *c){
       if(level>2)
         level=2;
 
-      Serial.print("\n*** Log Level set to ");
-      Serial.print(level);
-      Serial.print("\n\n");
+      EHK_DEBUG("\n*** Log Level set to ");
+      EHK_DEBUG(level);
+      EHK_DEBUG("\n\n");
       delay(1000);
       setLogLevel(level);     
     }
@@ -633,68 +633,68 @@ void Span::processSerialCommand(const char *c){
 
     case 'i':{
 
-      Serial.print("\n*** HomeSpan Info ***\n\n");
+      EHK_DEBUG("\n*** HomeSpan Info ***\n\n");
 
-      Serial.print(configLog);
-      Serial.print("\nConfigured as Bridge: ");
-      Serial.print(homeSpan.isBridge?"YES":"NO");
-      Serial.print("\n\n");
+      EHK_DEBUG(configLog);
+      EHK_DEBUG("\nConfigured as Bridge: ");
+      EHK_DEBUG(homeSpan.isBridge?"YES":"NO");
+      EHK_DEBUG("\n\n");
 
       char d[]="------------------------------";
-      Serial.printf("%-30s  %s  %10s  %s  %s  %s  %s  %s\n","Service","UUID","AID","IID","Update","Loop","Button","Linked Services");
-      Serial.printf("%.30s  %.4s  %.10s  %.3s  %.6s  %.4s  %.6s  %.15s\n",d,d,d,d,d,d,d,d);
+      EHK_DEBUGF("%-30s  %s  %10s  %s  %s  %s  %s  %s\n","Service","UUID","AID","IID","Update","Loop","Button","Linked Services");
+      EHK_DEBUGF("%.30s  %.4s  %.10s  %.3s  %.6s  %.4s  %.6s  %.15s\n",d,d,d,d,d,d,d,d);
       for(int i=0;i<Accessories.size();i++){                             // identify all services with over-ridden loop() methods
         for(int j=0;j<Accessories[i]->Services.size();j++){
           SpanService *s=Accessories[i]->Services[j];
-          Serial.printf("%-30s  %4s  %10u  %3d  %6s  %4s  %6s  ",s->hapName,s->type,Accessories[i]->aid,s->iid, 
+          EHK_DEBUGF("%-30s  %4s  %10u  %3d  %6s  %4s  %6s  ",s->hapName,s->type,Accessories[i]->aid,s->iid, 
                  (void(*)())(s->*(&SpanService::update))!=(void(*)())(&SpanService::update)?"YES":"NO",
                  (void(*)())(s->*(&SpanService::loop))!=(void(*)())(&SpanService::loop)?"YES":"NO",
                  (void(*)(int,boolean))(s->*(&SpanService::button))!=(void(*)(int,boolean))(&SpanService::button)?"YES":"NO"
                  );
           if(s->linkedServices.empty())
-            Serial.print("-");
+            EHK_DEBUG("-");
           for(int k=0;k<s->linkedServices.size();k++){
-            Serial.print(s->linkedServices[k]->iid);
+            EHK_DEBUG(s->linkedServices[k]->iid);
             if(k<s->linkedServices.size()-1)
-              Serial.print(",");
+              EHK_DEBUG(",");
           }
-          Serial.print("\n");
+          EHK_DEBUG("\n");
         }
       }
-      Serial.print("\n*** End Info ***\n");
+      EHK_DEBUG("\n*** End Info ***\n");
     }
     break;
 
     case '?': {    
       
-      Serial.print("\n*** HomeSpan Commands ***\n\n");
-      Serial.print("  s - print connection status\n");
-      Serial.print("  i - print summary information about the HAP Database\n");
-      Serial.print("  d - print the full HAP Accessory Attributes Database in JSON format\n");
-      Serial.print("\n");      
-      Serial.print("  W - configure WiFi Credentials and restart\n");      
-      Serial.print("  X - delete WiFi Credentials and restart\n");      
-      Serial.print("  S <code> - change the HomeKit Pairing Setup Code to <code>\n");
-      Serial.print("  Q <id> - change the HomeKit Setup ID for QR Codes to <id>\n");
-      Serial.print("  A - start the HomeSpan Setup Access Point\n");      
-      Serial.print("\n");      
-      Serial.print("  V - delete value settings for all saved Characteristics\n");
-      Serial.print("  U - unpair device by deleting all Controller data\n");
-      Serial.print("  H - delete HomeKit Device ID as well as all Controller data and restart\n");      
-      Serial.print("\n");      
-      Serial.print("  F - factory reset and restart\n");      
-      Serial.print("\n");          
-      Serial.print("  L <level> - change the Log Level setting to <level>\n");
-      Serial.print("\n");
+      EHK_DEBUG("\n*** HomeSpan Commands ***\n\n");
+      EHK_DEBUG("  s - print connection status\n");
+      EHK_DEBUG("  i - print summary information about the HAP Database\n");
+      EHK_DEBUG("  d - print the full HAP Accessory Attributes Database in JSON format\n");
+      EHK_DEBUG("\n");      
+      EHK_DEBUG("  W - configure WiFi Credentials and restart\n");      
+      EHK_DEBUG("  X - delete WiFi Credentials and restart\n");      
+      EHK_DEBUG("  S <code> - change the HomeKit Pairing Setup Code to <code>\n");
+      EHK_DEBUG("  Q <id> - change the HomeKit Setup ID for QR Codes to <id>\n");
+      EHK_DEBUG("  A - start the HomeSpan Setup Access Point\n");      
+      EHK_DEBUG("\n");      
+      EHK_DEBUG("  V - delete value settings for all saved Characteristics\n");
+      EHK_DEBUG("  U - unpair device by deleting all Controller data\n");
+      EHK_DEBUG("  H - delete HomeKit Device ID as well as all Controller data and restart\n");      
+      EHK_DEBUG("\n");      
+      EHK_DEBUG("  F - factory reset and restart\n");      
+      EHK_DEBUG("\n");          
+      EHK_DEBUG("  L <level> - change the Log Level setting to <level>\n");
+      EHK_DEBUG("\n");
 
       for(auto uCom=homeSpan.UserCommands.begin(); uCom!=homeSpan.UserCommands.end(); uCom++)      // loop over all UserCommands using an iterator
-        Serial.printf("  @%c %s\n",uCom->first,uCom->second->s);
+        EHK_DEBUGF("  @%c %s\n",uCom->first,uCom->second->s);
 
       if(!homeSpan.UserCommands.empty())
-        Serial.print("\n");
+        EHK_DEBUG("\n");
         
-      Serial.print("  ? - print this list of commands\n\n");     
-      Serial.print("*** End Commands ***\n\n");
+      EHK_DEBUG("  ? - print this list of commands\n\n");     
+      EHK_DEBUG("*** End Commands ***\n\n");
     }
     break;
 
@@ -709,9 +709,9 @@ void Span::processSerialCommand(const char *c){
     }
 
     default:
-      Serial.print("*** Unknown command: '");
-      Serial.print(c);
-      Serial.print("'.  Type '?' for list of commands.\n");
+      EHK_DEBUG("*** Unknown command: '");
+      EHK_DEBUG(c);
+      EHK_DEBUG("'.  Type '?' for list of commands.\n");
     break;
     
   } // switch
@@ -753,36 +753,36 @@ void Span::prettyPrint(char *buf, int nsp){
       
       case '{':
       case '[':
-        Serial.print(buf[i]);
-        Serial.print("\n");
+        EHK_DEBUG(buf[i]);
+        EHK_DEBUG("\n");
         indent+=nsp;
         for(int j=0;j<indent;j++)
-          Serial.print(" ");
+          EHK_DEBUG(" ");
         break;
 
       case '}':
       case ']':
-        Serial.print("\n");
+        EHK_DEBUG("\n");
         indent-=nsp;
         for(int j=0;j<indent;j++)
-          Serial.print(" ");
-        Serial.print(buf[i]);
+          EHK_DEBUG(" ");
+        EHK_DEBUG(buf[i]);
         break;
 
       case ',':
-        Serial.print(buf[i]);
-        Serial.print("\n");
+        EHK_DEBUG(buf[i]);
+        EHK_DEBUG("\n");
         for(int j=0;j<indent;j++)
-          Serial.print(" ");
+          EHK_DEBUG(" ");
         break;
 
       default:
-        Serial.print(buf[i]);
+        EHK_DEBUG(buf[i]);
            
     } // switch
   } // loop over all characters
 
-  Serial.print("\n");
+  EHK_DEBUG("\n");
 } // prettyPrint
 
 ///////////////////////////////
@@ -844,7 +844,7 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
 
       if(!cFound){                                 // first token found
         if(strcmp(t2,"characteristics")){
-          Serial.print("\n*** ERROR:  Problems parsing JSON - initial \"characteristics\" tag not found\n\n");
+          EHK_DEBUG("\n*** ERROR:  Problems parsing JSON - initial \"characteristics\" tag not found\n\n");
           return(0);
         }
         cFound=1;
@@ -872,17 +872,17 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
       if(!strcmp(t2,"pid") && (t3=strtok_r(t1,"}[]:, \"\t\n\r",&p2))){        
         uint64_t pid=strtoull(t3,NULL,0);        
         if(!TimedWrites.count(pid)){
-          Serial.print("\n*** ERROR:  Timed Write PID not found\n\n");
+          EHK_DEBUG("\n*** ERROR:  Timed Write PID not found\n\n");
           twFail=true;
         } else        
         if(millis()>TimedWrites[pid]){
-          Serial.print("\n*** ERROR:  Timed Write Expired\n\n");
+          EHK_DEBUG("\n*** ERROR:  Timed Write Expired\n\n");
           twFail=true;
         }        
       } else {
-        Serial.print("\n*** ERROR:  Problems parsing JSON characteristics object - unexpected property \"");
-        Serial.print(t2);
-        Serial.print("\"\n\n");
+        EHK_DEBUG("\n*** ERROR:  Problems parsing JSON characteristics object - unexpected property \"");
+        EHK_DEBUG(t2);
+        EHK_DEBUG("\"\n\n");
         return(0);
       }
     } // parse property tokens
@@ -891,7 +891,7 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
       if(okay==7 || okay==11  || okay==15){                                   // all required properties found                           
         nObj++;                                                               // increment number of characteristic objects found        
       } else {
-        Serial.print("\n*** ERROR:  Problems parsing JSON characteristics object - missing required properties\n\n");
+        EHK_DEBUG("\n*** ERROR:  Problems parsing JSON characteristics object - missing required properties\n\n");
         return(0);
       }
     }
@@ -1110,9 +1110,9 @@ SpanAccessory::SpanAccessory(uint32_t aid){
   if(!homeSpan.Accessories.empty()){
 
     if(homeSpan.Accessories.size()==HAPClient::MAX_ACCESSORIES){
-      Serial.print("\n\n*** FATAL ERROR: Can't create more than ");
-      Serial.print(HAPClient::MAX_ACCESSORIES);
-      Serial.print(" Accessories.  Program Halting.\n\n");
+      EHK_DEBUG("\n\n*** FATAL ERROR: Can't create more than ");
+      EHK_DEBUG(HAPClient::MAX_ACCESSORIES);
+      EHK_DEBUG(" Accessories.  Program Halting.\n\n");
       while(1);      
     }
     
@@ -1583,9 +1583,9 @@ SpanButton::SpanButton(int pin, uint16_t longTime, uint16_t singleTime, uint16_t
     return;
   }
 
-  Serial.print("Configuring PushButton: Pin=");     // initialization message
-  Serial.print(pin);
-  Serial.print("\n");
+  EHK_DEBUG("Configuring PushButton: Pin=");     // initialization message
+  EHK_DEBUG(pin);
+  EHK_DEBUG("\n");
 
   this->pin=pin;
   this->longTime=longTime;

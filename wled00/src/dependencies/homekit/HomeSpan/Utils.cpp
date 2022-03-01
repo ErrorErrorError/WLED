@@ -394,7 +394,7 @@ void Blinker::check(){
   if(pauseDuration==0 || isPaused || (millis()-pauseTime)<pauseDuration)
     return;
 
-  Serial.print("Pausing Status LED\n");
+  EHK_DEBUG("Pausing Status LED\n");
   isPaused=true;
   gpio_set_direction((gpio_num_t)pin, GPIO_MODE_DISABLE);
 }

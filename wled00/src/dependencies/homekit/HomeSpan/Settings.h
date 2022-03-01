@@ -94,8 +94,8 @@
 //      Message Log Level Control Macros           //
 //       0=Minimal, 1=Informative, 2=All           //
 
-#define LOG1(x) if(homeSpan.logLevel>0)Serial.print(x)
-#define LOG2(x) if(homeSpan.logLevel>1)Serial.print(x)
+#define LOG1(x) if(homeSpan.logLevel>0)EHK_DEBUG(x)
+#define LOG2(x) if(homeSpan.logLevel>1)EHK_DEBUG(x)
    
 
 //////////////////////////////////////////////////////
