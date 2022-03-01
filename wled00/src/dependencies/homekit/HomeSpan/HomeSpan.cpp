@@ -104,8 +104,6 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
     Serial.print(controlPin);
   else
     Serial.print("-  *** WARNING: Device Control Pin is UNDEFINED");
-  Serial.print("\nSketch Version:   ");
-  Serial.print(getSketchVersion());  
   Serial.print("\nHomeSpan Version: ");
   Serial.print(HOMESPAN_VERSION);
   Serial.print("\nArduino-ESP Ver.: ");
@@ -494,7 +492,6 @@ void Span::checkConnect(){
   mdns_service_txt_item_set("_hap","_tcp","hspn",HOMESPAN_VERSION);           // HomeSpan Version Number (info only - NOT used by HAP)
   mdns_service_txt_item_set("_hap","_tcp","ard-esp32",ARDUINO_ESP_VERSION);   // Arduino-ESP32 Version Number (info only - NOT used by HAP)
   mdns_service_txt_item_set("_hap","_tcp","board",ARDUINO_VARIANT);           // Board Name (info only - NOT used by HAP)
-  mdns_service_txt_item_set("_hap","_tcp","sketch",sketchVersion);            // Sketch Version (info only - NOT used by HAP)
 
   uint8_t hashInput[22];
   uint8_t hashOutput[64];

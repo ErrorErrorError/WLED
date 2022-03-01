@@ -91,7 +91,7 @@ struct SpanBuf{                               // temporary storage buffer for us
   StatusCode status;                          // return status (HAP Table 6-11)
   SpanCharacteristic *characteristic=NULL;    // Characteristic to update (NULL if not found)
 };
-  
+
 ///////////////////////////////
 
 struct Span{
@@ -109,7 +109,6 @@ struct Span{
   String configLog;                             // log of configuration process, including any errors
   boolean isBridge=true;                        // flag indicating whether device is configured as a bridge (i.e. first Accessory contains nothing but AccessoryInformation and HAPProtocolInformation)
   HapQR qrCode;                                 // optional QR Code to use for pairing
-  const char *sketchVersion="n/a";              // version of the sketch
   nvs_handle charNVS;                           // handle for non-volatile-storage of Characteristics data
   nvs_handle wifiNVS=0;                         // handle for non-volatile-storage of WiFi data
   char pairingCodeCommand[12]="";               // user-specified Pairing Code - only needed if Pairing Setup Code is specified in sketch using setPairingCode()
@@ -132,7 +131,7 @@ struct Span{
   void (*pairCallback)(boolean isPaired)=NULL;                // optional callback function to invoke when pairing is established (true) or lost (false)
   boolean autoStartAPEnabled=false;                           // enables auto start-up of Access Point when WiFi Credentials not found
   void (*apFunction)()=NULL;                                  // optional function to invoke when starting Access Point
-  
+
   WiFiServer *hapServer;                            // pointer to the HAP Server connection
   Blinker statusLED;                                // indicates HomeSpan status
   PushButton controlButton;                         // controls HomeSpan configuration and resets
@@ -144,14 +143,14 @@ struct Span{
   vector<SpanBuf> Notifications;                    // vector of SpanBuf objects that store info for Characteristics that are updated with setVal() and require a Notification Event
   vector<SpanButton *> PushButtons;                 // vector of pointer to all PushButtons
   unordered_map<uint64_t, uint32_t> TimedWrites;    // map of timed-write PIDs and Alarm Times (based on TTLs)
-  
+
   unordered_map<char, SpanUserCommand *> UserCommands;           // map of pointers to all UserCommands
 
   void begin(Category catID=DEFAULT_CATEGORY,
              const char *displayName=DEFAULT_DISPLAY_NAME,
              const char *hostNameBase=DEFAULT_HOST_NAME,
              const char *modelName=DEFAULT_MODEL_NAME);        
-             
+    
   void poll();                                  // poll HAP Clients and process any new HAP requests
   int getFreeSlot();                            // returns free HAPClient slot number. HAPClients slot keep track of each active HAPClient connection
   void checkConnect();                          // check WiFi connection; connect if needed
@@ -175,22 +174,15 @@ struct Span{
   void setStatusPin(uint8_t pin){statusPin=pin;}                          // sets Status Pin
   void setStatusAutoOff(uint16_t duration){autoOffLED=duration;}          // sets Status LED auto off (seconds)  
   int getStatusPin(){return(statusPin);}                                  // get Status Pin
-  void setApSSID(const char *ssid){network.apSSID=ssid;}                  // sets Access Point SSID
-  void setApPassword(const char *pwd){network.apPassword=pwd;}            // sets Access Point Password
-  void setApTimeout(uint16_t nSec){network.lifetime=nSec*1000;}           // sets Access Point Timeout (seconds)
   void setCommandTimeout(uint16_t nSec){comModeLife=nSec*1000;}           // sets Command Mode Timeout (seconds)
   void setLogLevel(uint8_t level){logLevel=level;}                        // sets Log Level for log messages (0=baseline, 1=intermediate, 2=all)
   void reserveSocketConnections(uint8_t n){maxConnections-=n;}            // reserves n socket connections *not* to be used for HAP
   void setHostNameSuffix(const char *suffix){hostNameSuffix=suffix;}      // sets the hostName suffix to be used instead of the 6-byte AccessoryID
   void setPortNum(uint16_t port){tcpPortNum=port;}                        // sets the TCP port number to use for communications between HomeKit and HomeSpan
   void setQRID(const char *id);                                           // sets the Setup ID for optional pairing with a QR Code
-  void setSketchVersion(const char *sVer){sketchVersion=sVer;}            // set optional sketch version number
-  const char *getSketchVersion(){return sketchVersion;}                   // get sketch version number
   void setWifiCallback(void (*f)()){wifiCallback=f;}                      // sets an optional user-defined function to call once WiFi connectivity is established
   void setPairCallback(void (*f)(boolean isPaired)){pairCallback=f;}      // sets an optional user-defined function to call when Pairing is established (true) or lost (false)
-  void setApFunction(void (*f)()){apFunction=f;}                          // sets an optional user-defined function to call when activating the WiFi Access Point
 
-  void enableAutoStartAP(){autoStartAPEnabled=true;}                      // enables auto start-up of Access Point when WiFi Credentials not found
   void setWifiCredentials(const char *ssid, const char *pwd);             // sets WiFi Credentials
 
   void setPairingCode(const char *s){sprintf(pairingCodeCommand,"S %9s",s);}    // sets the Pairing Code - use is NOT recommended.  Use 'S' from CLI instead
@@ -203,7 +195,7 @@ struct Span{
 
 ///////////////////////////////
 
-struct SpanAccessory{
+struct SpanAccessory {
     
   uint32_t aid=0;                           // Accessory Instance ID (HAP Table 6-1)
   int iidCount=0;                           // running count of iid to use for Services and Characteristics associated with this Accessory                                 
@@ -217,7 +209,7 @@ struct SpanAccessory{
 
 ///////////////////////////////
 
-struct SpanService{
+struct SpanService {
 
   int iid=0;                                              // Instance ID (HAP Table 6-2)
   const char *type;                                       // Service Type
