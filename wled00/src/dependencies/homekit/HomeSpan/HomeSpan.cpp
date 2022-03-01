@@ -47,7 +47,6 @@ HapCharacteristics hapChars;        // Instantiation of all HAP Characteristics 
 ///////////////////////////////
 
 void Span::begin(Category catID, const char *displayName, const char *hostNameBase, const char *modelName){
-  
   this->displayName=displayName;
   this->hostNameBase=hostNameBase;
   this->modelName=modelName;
@@ -55,8 +54,8 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 
   esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));       // required to avoid watchdog timeout messages from ESP32-C3
 
-  controlButton.init(controlPin);
-  statusLED.init(statusPin,0,autoOffLED);
+  // controlButton.init(controlPin);
+  // statusLED.init(statusPin,0,autoOffLED);
 
   if(requestedMaxCon<maxConnections)                          // if specific request for max connections is less than computed max connections
     maxConnections=requestedMaxCon;                           // over-ride max connections with requested value
@@ -69,17 +68,6 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 
   nvs_flash_init();                             // initialize non-volatile-storage partition in flash  
   nvs_open("CHAR",NVS_READWRITE,&charNVS);      // open Characteristic data namespace in NVS
-  nvs_open("WIFI",NVS_READWRITE,&wifiNVS);      // open WIFI data namespace in NVS
-
-  size_t len;
-
-  if(strlen(network.wifiData.ssid)){                                                // if setWifiCredentials was already called
-    nvs_set_blob(wifiNVS,"WIFIDATA",&network.wifiData,sizeof(network.wifiData));    // update data
-    nvs_commit(wifiNVS);                                                            // commit to NVS
-  } else
-  
-  if(!nvs_get_blob(wifiNVS,"WIFIDATA",NULL,&len))                                   // else if found WiFi data in NVS
-    nvs_get_blob(wifiNVS,"WIFIDATA",&homeSpan.network.wifiData,&len);               // retrieve data  
 
   delay(2000);
 
@@ -178,23 +166,12 @@ void Span::poll() {
 
     if(!strlen(network.wifiData.ssid)){
       Serial.print("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
-      if(autoStartAPEnabled){
-        Serial.print("AUTO-START OF ACCESS POINT ENABLED...\n\n");
-        processSerialCommand("A");
-      } else {
-        Serial.print("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
-        statusLED.start(LED_WIFI_NEEDED);
-      }
-    } else {
-      homeSpan.statusLED.start(LED_WIFI_CONNECTING);
+      Serial.print("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
     }
-          
-    controlButton.reset();        
-
+  
     Serial.print(displayName);
     Serial.print(" is READY!\n\n");
     isInitialized=true;
-    
   } // isInitialized
 
   if(strlen(network.wifiData.ssid)>0){
@@ -270,24 +247,7 @@ void Span::poll() {
   HAPClient::callServiceLoops();
   HAPClient::checkPushButtons();
   HAPClient::checkNotifications();  
-  HAPClient::checkTimedWrites();
-
-  if(controlButton.primed()){
-    statusLED.start(LED_ALERT);
-  }
-  
-  if(controlButton.triggered(3000,10000)){
-    statusLED.off();
-    if(controlButton.type()==PushButton::LONG){
-      controlButton.wait();
-      processSerialCommand("F");        // FACTORY RESET
-    } else {
-      commandMode();                    // COMMAND MODE
-    }
-  }
-
-  statusLED.check();
-    
+  HAPClient::checkTimedWrites();    
 } // poll
 
 ///////////////////////////////
@@ -304,76 +264,6 @@ int Span::getFreeSlot(){
 
 //////////////////////////////////////
 
-void Span::commandMode(){
-  
-  Serial.print("*** ENTERING COMMAND MODE ***\n\n");
-  int mode=1;
-  boolean done=false;
-  statusLED.start(500,0.3,mode,1000);
-
-  unsigned long alarmTime=millis()+comModeLife;
-
-  while(!done){
-    if(millis()>alarmTime){
-      Serial.print("*** Command Mode: Timed Out (");
-      Serial.print(comModeLife/1000);
-      Serial.print(" seconds).\n\n");
-      mode=1;
-      done=true;
-      statusLED.start(LED_ALERT);
-      delay(2000);
-    } else
-    if(controlButton.triggered(10,3000)){
-      if(controlButton.type()==PushButton::SINGLE){
-        mode++;
-        if(mode==6)
-          mode=1;
-        statusLED.start(500,0.3,mode,1000);        
-      } else {
-        done=true;
-      }
-    } // button press
-  } // while
-
-  statusLED.start(LED_ALERT);
-  controlButton.wait();
-  
-  switch(mode){
-
-    case 1:
-      Serial.print("*** NO ACTION\n\n");
-      if(strlen(network.wifiData.ssid)==0)
-        statusLED.start(LED_WIFI_NEEDED);
-      else
-      if(!HAPClient::nAdminControllers())
-        statusLED.start(LED_PAIRING_NEEDED);
-      else
-        statusLED.on();
-    break;
-
-    case 2:
-      processSerialCommand("R");
-    break;    
-
-    case 3:
-      processSerialCommand("A");
-    break;
-      
-    case 4:
-      processSerialCommand("U");
-    break;    
-    
-    case 5:
-      processSerialCommand("X");
-    break;    
-    
-  } // switch
-  
-  Serial.print("*** EXITING COMMAND MODE ***\n\n");
-}
-
-//////////////////////////////////////
-
 void Span::checkConnect(){
 
   if(connected){
@@ -384,7 +274,6 @@ void Span::checkConnect(){
     connected=false;
     waitTime=60000;
     alarmConnect=0;
-    homeSpan.statusLED.start(LED_WIFI_CONNECTING);
   }
 
   if(WiFi.status()!=WL_CONNECTED){
@@ -512,9 +401,6 @@ void Span::checkConnect(){
 
   if(!HAPClient::nAdminControllers()){
     Serial.print("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
-    statusLED.start(LED_PAIRING_NEEDED);
-  } else {
-    statusLED.on();
   }
 
   if(wifiCallback)
@@ -589,7 +475,6 @@ void Span::processSerialCommand(const char *c){
     break;
 
     case 'd': {      
-      
       TempBuffer <char> qBuf(sprintfAttributes(NULL)+1);
       sprintfAttributes(qBuf.buf);  
 
@@ -624,7 +509,6 @@ void Span::processSerialCommand(const char *c){
     break;
 
     case 'S': {
-      
       char buf[128];
       char setupCode[10];
 
@@ -634,15 +518,14 @@ void Span::processSerialCommand(const char *c){
       } verifyData;      
 
       sscanf(c+1," %9[0-9]",setupCode);
-      
+
       if(strlen(setupCode)!=8){
         Serial.print("\n*** Invalid request to change Setup Code.  Code must be exactly 8 digits.\n\n");
       } else
-      
+
       if(!network.allowedCode(setupCode)){
         Serial.print("\n*** Invalid request to change Setup Code.  Code too simple.\n\n");
       } else {
-        
         sprintf(buf,"\n\nGenerating SRP verification data for new Setup Code: %.3s-%.2s-%.3s ... ",setupCode,setupCode+3,setupCode+5);
         Serial.print(buf);
         HAPClient::srp.createVerifyCode(setupCode,verifyData.verifyCode,verifyData.salt);                         // create verification code from default Setup Code and random salt
@@ -662,7 +545,7 @@ void Span::processSerialCommand(const char *c){
       nvs_set_blob(HAPClient::hapNVS,"CONTROLLERS",HAPClient::controllers,sizeof(HAPClient::controllers));      // update data
       nvs_commit(HAPClient::hapNVS);                                                                            // commit to NVS
       Serial.print("\n*** HomeSpan Pairing Data DELETED ***\n\n");
-      
+
       for(int i=0;i<maxConnections;i++){     // loop over all connection slots
         if(hap[i]->client){                    // if slot is connected
           LOG1("*** Terminating Client #");
@@ -676,33 +559,13 @@ void Span::processSerialCommand(const char *c){
       mdns_service_txt_item_set("_hap","_tcp","sf","1");                                                        // set Status Flag = 1 (Table 6-8)
       
       if(strlen(network.wifiData.ssid)==0)
-        statusLED.start(LED_WIFI_NEEDED);
+        Serial.print("\nNetwork wifi not set up.");
       else
-        statusLED.start(LED_PAIRING_NEEDED);
+        Serial.print("\nNetwork wifi is set up.");
     }
     break;
 
-    case 'W': {
-
-      if(strlen(network.wifiData.ssid)>0){
-        Serial.print("*** Stopping all current WiFi services...\n\n");
-        hapServer->end();
-        MDNS.end();
-        WiFi.disconnect();
-      }
-
-      network.serialConfigure();
-      nvs_set_blob(wifiNVS,"WIFIDATA",&network.wifiData,sizeof(network.wifiData));    // update data
-      nvs_commit(wifiNVS);                                                            // commit to NVS
-      Serial.print("\n*** WiFi Credentials SAVED!  Re-starting ***\n\n");
-      statusLED.off();
-      delay(1000);
-      ESP.restart();  
-      }
-    break;
-
     case 'A': {
-
       if(strlen(network.wifiData.ssid)>0){
         Serial.print("*** Stopping all current WiFi services...\n\n");
         hapServer->end();
@@ -710,15 +573,6 @@ void Span::processSerialCommand(const char *c){
         WiFi.disconnect();
       }
 
-      if(apFunction){
-        apFunction();
-        return;
-      }
-      
-      network.apConfigure();
-      nvs_set_blob(wifiNVS,"WIFIDATA",&network.wifiData,sizeof(network.wifiData));    // update data
-      nvs_commit(wifiNVS);                                                            // commit to NVS
-      Serial.print("\n*** Credentials saved!\n\n");
       if(strlen(network.setupCode)){
         char s[10];
         sprintf(s,"S%s",network.setupCode);
@@ -726,27 +580,14 @@ void Span::processSerialCommand(const char *c){
       } else {
         Serial.print("*** Setup Code Unchanged\n");
       }
-      
-      Serial.print("\n*** Re-starting ***\n\n");
-      statusLED.off();
-      delay(1000);
-      ESP.restart();                                                                             // re-start device   
-    }
-    break;
-    
-    case 'X': {
 
-      statusLED.off();
-      nvs_erase_all(wifiNVS);
-      nvs_commit(wifiNVS);      
-      Serial.print("\n*** WiFi Credentials ERASED!  Re-starting...\n\n");
+      Serial.print("\n*** Re-starting ***\n\n");
       delay(1000);
       ESP.restart();                                                                             // re-start device   
     }
     break;
 
     case 'V': {
-      
       nvs_erase_all(charNVS);
       nvs_commit(charNVS);      
       Serial.print("\n*** Values for all saved Characteristics erased!\n\n");
@@ -754,8 +595,6 @@ void Span::processSerialCommand(const char *c){
     break;
 
     case 'H': {
-      
-      statusLED.off();
       nvs_erase_all(HAPClient::hapNVS);
       nvs_commit(HAPClient::hapNVS);      
       Serial.print("\n*** HomeSpan Device ID and Pairing Data DELETED!  Restarting...\n\n");
@@ -764,22 +603,9 @@ void Span::processSerialCommand(const char *c){
     }
     break;
 
-    case 'R': {
-      
-      statusLED.off();
-      Serial.print("\n*** Restarting...\n\n");
-      delay(1000);
-      ESP.restart();
-    }
-    break;
-
     case 'F': {
-      
-      statusLED.off();
       nvs_erase_all(HAPClient::hapNVS);
       nvs_commit(HAPClient::hapNVS);      
-      nvs_erase_all(wifiNVS);
-      nvs_commit(wifiNVS);   
       nvs_erase_all(charNVS);
       nvs_commit(charNVS);   
       Serial.print("\n*** FACTORY RESET!  Restarting...\n\n");
@@ -788,18 +614,7 @@ void Span::processSerialCommand(const char *c){
     }
     break;
 
-    case 'E': {
-      
-      statusLED.off();
-      nvs_flash_erase();
-      Serial.print("\n*** ALL DATA ERASED!  Restarting...\n\n");
-      delay(1000);
-      ESP.restart();
-    }
-    break;
-
     case 'L': {
-
       int level=0;
       sscanf(c+1,"%d",&level);
       
@@ -867,9 +682,7 @@ void Span::processSerialCommand(const char *c){
       Serial.print("  U - unpair device by deleting all Controller data\n");
       Serial.print("  H - delete HomeKit Device ID as well as all Controller data and restart\n");      
       Serial.print("\n");      
-      Serial.print("  R - restart device\n");      
       Serial.print("  F - factory reset and restart\n");      
-      Serial.print("  E - erase ALL stored data and restart\n");      
       Serial.print("\n");          
       Serial.print("  L <level> - change the Log Level setting to <level>\n");
       Serial.print("\n");
@@ -909,10 +722,6 @@ void Span::processSerialCommand(const char *c){
 void Span::setWifiCredentials(const char *ssid, const char *pwd){
   sprintf(network.wifiData.ssid,"%.*s",MAX_SSID,ssid);
   sprintf(network.wifiData.pwd,"%.*s",MAX_PWD,pwd);
-  if(wifiNVS){                                                                      // is begin() already called and wifiNVS is open
-    nvs_set_blob(wifiNVS,"WIFIDATA",&network.wifiData,sizeof(network.wifiData));    // update data
-    nvs_commit(wifiNVS);                                                            // commit to NVS
-  }
 }
 
 ///////////////////////////////
@@ -1298,7 +1107,6 @@ void Span::checkRanges(){
 ///////////////////////////////
 
 SpanAccessory::SpanAccessory(uint32_t aid){
-
   if(!homeSpan.Accessories.empty()){
 
     if(homeSpan.Accessories.size()==HAPClient::MAX_ACCESSORIES){

@@ -110,13 +110,12 @@ struct Span{
   boolean isBridge=true;                        // flag indicating whether device is configured as a bridge (i.e. first Accessory contains nothing but AccessoryInformation and HAPProtocolInformation)
   HapQR qrCode;                                 // optional QR Code to use for pairing
   nvs_handle charNVS;                           // handle for non-volatile-storage of Characteristics data
-  nvs_handle wifiNVS=0;                         // handle for non-volatile-storage of WiFi data
   char pairingCodeCommand[12]="";               // user-specified Pairing Code - only needed if Pairing Setup Code is specified in sketch using setPairingCode()
 
   boolean connected=false;                      // WiFi connection status
   unsigned long waitTime=60000;                 // time to wait (in milliseconds) between WiFi connection attempts
   unsigned long alarmConnect=0;                 // time after which WiFi connection attempt should be tried again
-  
+
   const char *defaultSetupCode=DEFAULT_SETUP_CODE;            // Setup Code used for pairing
   int statusPin=DEFAULT_STATUS_PIN;                           // pin for Status LED
   uint16_t autoOffLED=0;                                      // automatic turn-off duration (in seconds) for Status LED
@@ -129,13 +128,9 @@ struct Span{
   char qrID[5]="";                                            // Setup ID used for pairing with QR Code
   void (*wifiCallback)()=NULL;                                // optional callback function to invoke once WiFi connectivity is established
   void (*pairCallback)(boolean isPaired)=NULL;                // optional callback function to invoke when pairing is established (true) or lost (false)
-  boolean autoStartAPEnabled=false;                           // enables auto start-up of Access Point when WiFi Credentials not found
-  void (*apFunction)()=NULL;                                  // optional function to invoke when starting Access Point
 
   WiFiServer *hapServer;                            // pointer to the HAP Server connection
-  Blinker statusLED;                                // indicates HomeSpan status
-  PushButton controlButton;                         // controls HomeSpan configuration and resets
-  HKNetwork network;                                  // configures WiFi and Setup Code via either serial monitor or temporary Access Point
+  HKNetwork network;                                // configures WiFi and Setup Code
   
   SpanConfig hapConfig;                             // track configuration changes to the HAP Accessory database; used to increment the configuration number (c#) when changes found
   vector<SpanAccessory *> Accessories;              // vector of pointers to all Accessories
@@ -154,7 +149,6 @@ struct Span{
   void poll();                                  // poll HAP Clients and process any new HAP requests
   int getFreeSlot();                            // returns free HAPClient slot number. HAPClients slot keep track of each active HAPClient connection
   void checkConnect();                          // check WiFi connection; connect if needed
-  void commandMode();                           // allows user to control and reset HomeSpan settings with the control button
   void processSerialCommand(const char *c);     // process command 'c' (typically from readSerial, though can be called with any 'c')
   void checkRanges();                           // checks values of all Characteristics to ensure they are each within range
 
@@ -210,7 +204,6 @@ struct SpanAccessory {
 ///////////////////////////////
 
 struct SpanService {
-
   int iid=0;                                              // Instance ID (HAP Table 6-2)
   const char *type;                                       // Service Type
   const char *hapName;                                    // HAP Name

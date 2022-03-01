@@ -325,13 +325,13 @@ WLED_GLOBAL bool receiveNotificationColor      _INIT(true);       // apply color
 WLED_GLOBAL bool receiveNotificationEffects    _INIT(true);       // apply effects setup
 WLED_GLOBAL bool receiveSegmentOptions         _INIT(false);      // apply segment options
 WLED_GLOBAL bool receiveSegmentBounds          _INIT(false);      // apply segment bounds (start, stop, offset)
-WLED_GLOBAL bool notifyDirect _INIT(false);                       // send notification if change via UI or HTTP API
-WLED_GLOBAL bool notifyButton _INIT(false);                       // send if updated by button or infrared remote
-WLED_GLOBAL bool notifyAlexa  _INIT(false);                       // send notification if updated via Alexa
-WLED_GLOBAL bool notifyMacro  _INIT(false);                       // send notification for macro
-WLED_GLOBAL bool notifyHue    _INIT(true);                        // send notification if Hue light changes
-WLED_GLOBAL bool notifyTwice  _INIT(false);                       // notifications use UDP: enable if devices don't sync reliably
-WLED_GLOBAL bool notifyHK     _INIT(false);                       // send notification if updated via homekit
+WLED_GLOBAL bool notifyDirect   _INIT(false);                       // send notification if change via UI or HTTP API
+WLED_GLOBAL bool notifyButton   _INIT(false);                       // send if updated by button or infrared remote
+WLED_GLOBAL bool notifyAlexa    _INIT(false);                       // send notification if updated via Alexa
+WLED_GLOBAL bool notifyMacro    _INIT(false);                       // send notification for macro
+WLED_GLOBAL bool notifyHue      _INIT(true);                        // send notification if Hue light changes
+WLED_GLOBAL bool notifyTwice    _INIT(false);                       // notifications use UDP: enable if devices don't sync reliably
+WLED_GLOBAL bool notifyHomeKit  _INIT(false);                       // send notification if updated via homekit
 
 WLED_GLOBAL bool alexaEnabled _INIT(false);                       // enable device discovery by Amazon Echo
 WLED_GLOBAL char alexaInvocationName[33] _INIT("Light");          // speech control name of device. Choose something voice-to-text can understand
@@ -567,7 +567,7 @@ WLED_GLOBAL String escapedMac;
 // HomeKit
 
 #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
-  WLED_GLOBAL HomeKitDevice * homeKitDevice;
+  WLED_GLOBAL HomeKitDevice* homeKitDevice;
 #endif
 
 // dns server

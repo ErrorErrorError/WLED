@@ -25,7 +25,7 @@ void notify(byte callMode, bool followUp)
     case CALL_MODE_PRESET_CYCLE:  if (!notifyDirect) return; break;
     case CALL_MODE_BLYNK:         if (!notifyDirect) return; break;
     case CALL_MODE_ALEXA:         if (!notifyAlexa)  return; break;
-    case CALL_MODE_HOMEKIT:       if (!notifyHK)     return; break;
+    case CALL_MODE_HOMEKIT:       if (!notifyHomeKit)     return; break;
     default: return;
   }
   byte udpOut[WLEDPACKETSIZE];
