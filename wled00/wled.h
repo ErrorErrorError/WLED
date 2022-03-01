@@ -122,6 +122,10 @@
 #include "src/dependencies/json/AsyncJson-v6.h"
 #include "src/dependencies/json/ArduinoJson-v6.h"
 
+#if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
+  #include "src/dependencies/homekit/HomeKitDevice.h"
+#endif
+
 // ESP32-WROVER features SPI RAM (aka PSRAM) which can be allocated using ps_malloc()
 // we can create custom PSRAMDynamicJsonDocument to use such feature (replacing DynamicJsonDocument)
 // The following is a construct to enable code to compile without it.
@@ -327,6 +331,7 @@ WLED_GLOBAL bool notifyAlexa  _INIT(false);                       // send notifi
 WLED_GLOBAL bool notifyMacro  _INIT(false);                       // send notification for macro
 WLED_GLOBAL bool notifyHue    _INIT(true);                        // send notification if Hue light changes
 WLED_GLOBAL bool notifyTwice  _INIT(false);                       // notifications use UDP: enable if devices don't sync reliably
+WLED_GLOBAL bool notifyHK     _INIT(false);                       // send notification if updated via homekit
 
 WLED_GLOBAL bool alexaEnabled _INIT(false);                       // enable device discovery by Amazon Echo
 WLED_GLOBAL char alexaInvocationName[33] _INIT("Light");          // speech control name of device. Choose something voice-to-text can understand
@@ -557,6 +562,12 @@ WLED_GLOBAL String escapedMac;
 #ifndef WLED_DISABLE_ALEXA
   WLED_GLOBAL Espalexa espalexa;
   WLED_GLOBAL EspalexaDevice* espalexaDevice;
+#endif
+
+// HomeKit
+
+#if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
+  WLED_GLOBAL HomeKitDevice * homeKitDevice;
 #endif
 
 // dns server

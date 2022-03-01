@@ -171,6 +171,18 @@ void updateInterfaces(uint8_t callMode)
   if (callMode != CALL_MODE_BLYNK && 
       callMode != CALL_MODE_NO_NOTIFY) updateBlynk();
   #endif
+  #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
+  if (homeKitDevice != nullptr && callMode != CALL_MODE_HOMEKIT) {
+    uint16_t hsb[3]{0};
+    colorFromRGB(col[0], col[1], col[2], hsb);
+    double saturation = map(hsb[1], 0, UINT8_MAX, 0, 100);
+    uint8_t brightness = map(bri, 0, UINT8_MAX, 0, 100);
+    homeKitDevice->power->setVal(bri > 0, true);
+    homeKitDevice->level->setVal(brightness, true);
+    homeKitDevice->hue->setVal(hsb[0], true);
+    homeKitDevice->saturation->setVal(saturation, true);
+  }
+  #endif
   doPublishMqtt = true;
 }
 

@@ -149,6 +149,10 @@ void WLED::loop()
   handleIR();
   handleAlexa();
 
+  #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
+  handleHomeKit();
+  #endif
+
   yield();
 
   if (doReboot)
@@ -667,6 +671,11 @@ void WLED::initInterfaces()
 #ifndef WLED_DISABLE_BLYNK
   initBlynk(blynkApiKey, blynkHost, blynkPort);
 #endif
+
+#if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
+  homekitInit();
+#endif
+
   e131.begin(e131Multicast, e131Port, e131Universe, E131_MAX_UNIVERSE_COUNT);
   ddp.begin(false, DDP_DEFAULT_PORT);
   reconnectHue();
