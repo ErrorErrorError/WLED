@@ -27,6 +27,8 @@
  
 #pragma once
 
+#ifdef ESP32
+
 #include <Arduino.h>
 #include <driver/timer.h>
 
@@ -256,3 +258,5 @@ class Blinker {
 
 
 };
+
+#endif

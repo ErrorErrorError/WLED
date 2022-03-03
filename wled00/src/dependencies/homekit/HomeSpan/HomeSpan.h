@@ -97,8 +97,7 @@ struct SpanBuf{                               // temporary storage buffer for us
 
 ///////////////////////////////
 
-struct Span{
-
+struct Span {
   const char *displayName;                      // display name for this device - broadcast as part of Bonjour MDNS
   const char *hostNameBase;                     // base of hostName of this device - full host name broadcast by Bonjour MDNS will have 6-byte accessoryID as well as '.local' automatically appended
   const char *hostNameSuffix=NULL;              // optional "suffix" of hostName of this device.  If specified, will be used as the hostName suffix instead of the 6-byte accessoryID
@@ -112,7 +111,6 @@ struct Span{
   String configLog;                             // log of configuration process, including any errors
   boolean isBridge=true;                        // flag indicating whether device is configured as a bridge (i.e. first Accessory contains nothing but AccessoryInformation and HAPProtocolInformation)
   HapQR qrCode;                                 // optional QR Code to use for pairing
-  nvs_handle charNVS;                           // handle for non-volatile-storage of Characteristics data
   char pairingCodeCommand[12]="";               // user-specified Pairing Code - only needed if Pairing Setup Code is specified in sketch using setPairingCode()
 
   boolean connected=false;                      // WiFi connection status
@@ -182,8 +180,7 @@ struct Span{
 
   void setWifiCredentials(const char *ssid, const char *pwd);             // sets WiFi Credentials
 
-  void setPairingCode(const char *s){sprintf(pairingCodeCommand,"S %9s",s);}    // sets the Pairing Code - use is NOT recommended.  Use 'S' from CLI instead
-  void deleteStoredValues(){processSerialCommand("V");}                         // deletes stored Characteristic values from NVS  
+  void setPairingCode(const char *s) { sprintf(pairingCodeCommand,"S %9s",s); }    // sets the Pairing Code - use is NOT recommended.  Use 'S' from CLI instead
 
   [[deprecated("Please use reserveSocketConnections(n) method instead.")]]
   void setMaxConnections(uint8_t n){requestedMaxCon=n;}                   // sets maximum number of simultaneous HAP connections 
@@ -262,7 +259,6 @@ struct SpanCharacteristic{
   boolean customRange=false;               // Flag for custom ranges
   const char *validValues=NULL;            // Optional JSON array of valid values.  Applicable only to uint8 Characteristics
   boolean *ev;                             // Characteristic Event Notify Enable (per-connection)
-  char *nvsKey=NULL;                       // key for NVS storage of Characteristic value
   
   uint32_t aid=0;                          // Accessory ID - passed through from Service containing this Characteristic
   boolean isUpdated=false;                 // set to true when new value has been requested by PUT /characteristic
@@ -384,7 +380,6 @@ struct SpanCharacteristic{
       sprintf(c,"  *** ERROR!  Can't change range for this Characteristic! ***\n");
       homeSpan.nFatalErrors++;
     } else {
-      
       uvSet(minValue,min);
       uvSet(maxValue,max);
       uvSet(stepValue,step);  
@@ -400,43 +395,8 @@ struct SpanCharacteristic{
     
   } // setRange()
     
-  template <typename T, typename A=boolean, typename B=boolean> void init(T val, boolean nvsStore, A min=0, B max=1){
-
-    int nvsFlag=0;
-    uvSet(value,val);
-
-    if(nvsStore){
-      nvsKey=(char *)malloc(16);
-      uint16_t t;
-      sscanf(type,"%x", (unsigned int *)&t);
-      sprintf(nvsKey,"%04X%08X%03X",t,aid,iid&0xFFF);
-      size_t len;    
-
-      if(format != FORMAT::STRING){
-        if(!nvs_get_blob(homeSpan.charNVS,nvsKey,NULL,&len)){
-          nvs_get_blob(homeSpan.charNVS,nvsKey,&value,&len);          
-          nvsFlag=2;
-        }
-        else {
-          nvs_set_blob(homeSpan.charNVS,nvsKey,&value,sizeof(UVal));     // store data           
-          nvs_commit(homeSpan.charNVS);                                    // commit to NVS  
-          nvsFlag=1;
-        }     
-      } else {
-        if(!nvs_get_str(homeSpan.charNVS,nvsKey,NULL,&len)){
-          char c[len];
-          nvs_get_str(homeSpan.charNVS,nvsKey,c,&len);                    
-          uvSet(value,(const char *)c);
-          nvsFlag=2;
-        }
-        else {
-          nvs_set_str(homeSpan.charNVS,nvsKey,value.STRING);             // store string data
-          nvs_commit(homeSpan.charNVS);                                    // commit to NVS  
-          nvsFlag=1;
-        }
-      }
-    }
-  
+  template <typename T, typename A=boolean, typename B=boolean> void init(T val, A min=0, B max=1){
+    uvSet(value,val); 
     uvSet(newValue,value);
 
     if(format != FORMAT::STRING) {
@@ -453,11 +413,6 @@ struct SpanCharacteristic{
     homeSpan.configLog+="(" + uvPrint(value) + ")" + ":  IID=" + String(iid) + ", " + (isCustom?"Custom-":"") + "UUID=\"" + String(type) + "\"";
     if(format!=FORMAT::STRING && format!=FORMAT::BOOL)
       homeSpan.configLog+= ", Range=[" + String(uvPrint(minValue)) + "," + String(uvPrint(maxValue)) + "]";
-
-    if(nvsFlag==2)
-      homeSpan.configLog+=" (restored)";
-    else if(nvsFlag==1)
-      homeSpan.configLog+=" (storing)";
 
     boolean valid=isCustom;
   
@@ -476,16 +431,14 @@ struct SpanCharacteristic{
     
     for(int i=0; !repeated && i<homeSpan.Accessories.back()->Services.back()->Characteristics.size(); i++)
       repeated=!strcmp(type,homeSpan.Accessories.back()->Services.back()->Characteristics[i]->type);
-    
     if(valid && repeated){
       homeSpan.configLog+=" *** ERROR!  Characteristic already defined for this Service. ***";
       homeSpan.nFatalErrors++;
     }
   
     homeSpan.Accessories.back()->Services.back()->Characteristics.push_back(this);  
-  
+
     homeSpan.configLog+="\n"; 
-   
   } // init()
 
 
@@ -511,32 +464,6 @@ struct SpanCharacteristic{
     return NULL;
   }
 
-  void setString(const char *val){
-
-    if((perms & EV) == 0){
-      EHK_DEBUGF("\n*** WARNING:  Attempt to update Characteristic::%s with setVal() ignored.  No NOTIFICATION permission on this characteristic\n\n",hapName);
-      return;
-    }
-
-    uvSet(value,val);
-    uvSet(newValue,value);
-      
-    updateTime=homeSpan.snapTime;
-    
-    SpanBuf sb;                             // create SpanBuf object
-    sb.characteristic=this;                 // set characteristic          
-    sb.status=StatusCode::OK;               // set status
-    char dummy[]="";
-    sb.val=dummy;                           // set dummy "val" so that sprintfNotify knows to consider this "update"
-    homeSpan.Notifications.push_back(sb);   // store SpanBuf in Notifications vector  
-
-    if(nvsKey){
-      nvs_set_str(homeSpan.charNVS,nvsKey,value.STRING);    // store data
-      nvs_commit(homeSpan.charNVS);
-    }
-    
-  } // setString()
-
   template <typename T> void setVal(T val, boolean notify=true){
 
     if((perms & EV) == 0){
@@ -561,13 +488,7 @@ struct SpanCharacteristic{
       char dummy[]="";
       sb.val=dummy;                           // set dummy "val" so that sprintfNotify knows to consider this "update"
       homeSpan.Notifications.push_back(sb);   // store SpanBuf in Notifications vector  
-  
-      if(nvsKey){
-        nvs_set_blob(homeSpan.charNVS,nvsKey,&value,sizeof(UVal));    // store data
-        nvs_commit(homeSpan.charNVS);
-      }
     }
-    
   } // setVal()
 
   SpanCharacteristic *setPerms(uint8_t perms){

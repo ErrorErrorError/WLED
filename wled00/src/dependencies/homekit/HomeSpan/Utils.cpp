@@ -39,6 +39,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef ESP32
+
 char *Utils::readSerial(char *c, int max){
   int i=0;
   char buf;
@@ -398,3 +400,5 @@ void Blinker::check(){
   isPaused=true;
   gpio_set_direction((gpio_num_t)pin, GPIO_MODE_DISABLE);
 }
+
+#endif

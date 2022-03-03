@@ -43,7 +43,7 @@ struct HKNetwork {
     char ssid[MAX_SSID+1]="";
     char pwd[MAX_PWD+1]="";
   } wifiData;
-  
+
   char setupCode[8+1];  
 
   boolean allowedCode(char *s);                                             // checks if Setup Code is allowed (HAP defines a list of disallowed codes)

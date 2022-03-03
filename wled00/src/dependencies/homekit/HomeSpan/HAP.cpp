@@ -25,6 +25,8 @@
  *  
  ********************************************************************************/
 
+#ifdef ESP32
+
 #include <ESPmDNS.h>
 #include <sodium.h>
 #include <MD5Builder.h>
@@ -34,9 +36,7 @@
 
 //////////////////////////////////////
 
-void HAPClient::init()
-{
-
+void HAPClient::init() {
   size_t len; // not used but required to read blobs from NVS
 
   nvs_open("SRP", NVS_READWRITE, &srpNVS); // open SRP data namespace in NVS
@@ -47,20 +47,15 @@ void HAPClient::init()
     homeSpan.processSerialCommand(homeSpan.pairingCodeCommand); // if load failed due to invalid code, the logic below still runs and will pick up previous code or use the default one
   }
 
-  struct
-  { // temporary structure to hold SRP verification code and salt stored in NVS
+  struct { // temporary structure to hold SRP verification code and salt stored in storage
     uint8_t salt[16];
     uint8_t verifyCode[384];
   } verifyData;
 
-  if (!nvs_get_blob(srpNVS, "VERIFYDATA", NULL, &len))
-  {                                                             // if found verification code data in NVS
+  if (!nvs_get_blob(srpNVS, "VERIFYDATA", NULL, &len)) {        // if found verification code data in NVS
     nvs_get_blob(srpNVS, "VERIFYDATA", &verifyData, &len);      // retrieve data
     srp.loadVerifyCode(verifyData.verifyCode, verifyData.salt); // load verification code and salt into SRP structure
-  }
-  else
-  {
-
+  } else {
     char c[128];
     sprintf(c, "Generating SRP verification data for default Setup Code: %.3s-%.2s-%.3s\n", homeSpan.defaultSetupCode, homeSpan.defaultSetupCode + 3, homeSpan.defaultSetupCode + 5);
     EHK_DEBUG(c);
@@ -72,24 +67,18 @@ void HAPClient::init()
     EHK_DEBUG("\n\n");
   }
 
-  if (!strlen(homeSpan.qrID))
-  { // Setup ID has not been specified in sketch
-    if (!nvs_get_str(hapNVS, "SETUPID", NULL, &len))
-    {                                                      // check for saved value
-      nvs_get_str(hapNVS, "SETUPID", homeSpan.qrID, &len); // retrieve data
-    }
-    else
-    {
+  if (!strlen(homeSpan.qrID)) {   // Setup ID has not been specified in sketch
+    if (!nvs_get_str(hapNVS, "SETUPID", NULL, &len)) {      // check for saved value
+      nvs_get_str(hapNVS, "SETUPID", homeSpan.qrID, &len);  // retrieve data
+    } else {
       sprintf(homeSpan.qrID, "%s", DEFAULT_QR_ID); // use default
     }
   }
 
-  if (!nvs_get_blob(hapNVS, "ACCESSORY", NULL, &len))
-  {                                                      // if found long-term Accessory data in NVS
-    nvs_get_blob(hapNVS, "ACCESSORY", &accessory, &len); // retrieve data
+  if (!nvs_get_blob(hapNVS, "ACCESSORY", NULL, &len)) {   // if found long-term Accessory data in NVS
+    nvs_get_blob(hapNVS, "ACCESSORY", &accessory, &len);  // retrieve data
   }
-  else
-  {
+  else {
     EHK_DEBUG("Generating new random Accessory ID and Long-Term Ed25519 Signature Keys...\n");
     uint8_t buf[6];
     char cBuf[18];
@@ -182,10 +171,8 @@ void HAPClient::init()
     EHK_DEBUG("\n\n");
   }
 
-  for (int i = 0; i < homeSpan.Accessories.size(); i++)
-  { // identify all services with over-ridden loop() methods
-    for (int j = 0; j < homeSpan.Accessories[i]->Services.size(); j++)
-    {
+  for (int i = 0; i < homeSpan.Accessories.size(); i++) { // identify all services with over-ridden loop() methods
+    for (int j = 0; j < homeSpan.Accessories[i]->Services.size(); j++) {
       SpanService *s = homeSpan.Accessories[i]->Services[j];
       if ((void (*)())(s->*(&SpanService::loop)) != (void (*)())(&SpanService::loop)) // save pointers to services in Loops vector
         homeSpan.Loops.push_back(s);
@@ -1810,3 +1797,5 @@ Accessory HAPClient::accessory;
 Controller HAPClient::controllers[MAX_CONTROLLERS];
 SRP6A HAPClient::srp;
 int HAPClient::conNum;
+
+#endif

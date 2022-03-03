@@ -25,6 +25,8 @@
  *  
  ********************************************************************************/
 
+#ifdef ESP32
+
 #include <ESPmDNS.h>
 #include <nvs_flash.h>
 #include <sodium.h>
@@ -54,9 +56,6 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 
   esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));       // required to avoid watchdog timeout messages from ESP32-C3
 
-  // controlButton.init(controlPin);
-  // statusLED.init(statusPin,0,autoOffLED);
-
   if(requestedMaxCon<maxConnections)                          // if specific request for max connections is less than computed max connections
     maxConnections=requestedMaxCon;                           // over-ride max connections with requested value
 
@@ -67,7 +66,6 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   hapServer=new WiFiServer(tcpPortNum);
 
   nvs_flash_init();                             // initialize non-volatile-storage partition in flash  
-  nvs_open("CHAR",NVS_READWRITE,&charNVS);      // open Characteristic data namespace in NVS
 
   delay(2000);
 
@@ -162,7 +160,7 @@ void Span::poll() {
 
     EHK_DEBUG("\n");
         
-    HAPClient::init();        // read NVS and load HAP settings  
+    HAPClient::init();        // load HAP settings  
 
     if(!strlen(network.wifiData.ssid)){
       EHK_DEBUG("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
@@ -587,13 +585,6 @@ void Span::processSerialCommand(const char *c){
     }
     break;
 
-    case 'V': {
-      nvs_erase_all(charNVS);
-      nvs_commit(charNVS);      
-      EHK_DEBUG("\n*** Values for all saved Characteristics erased!\n\n");
-    }
-    break;
-
     case 'H': {
       nvs_erase_all(HAPClient::hapNVS);
       nvs_commit(HAPClient::hapNVS);      
@@ -605,9 +596,7 @@ void Span::processSerialCommand(const char *c){
 
     case 'F': {
       nvs_erase_all(HAPClient::hapNVS);
-      nvs_commit(HAPClient::hapNVS);      
-      nvs_erase_all(charNVS);
-      nvs_commit(charNVS);   
+      nvs_commit(HAPClient::hapNVS);   
       EHK_DEBUG("\n*** FACTORY RESET!  Restarting...\n\n");
       delay(1000);
       ESP.restart();
@@ -931,13 +920,6 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
           LOG1(pObj[j].characteristic->iid);
           if(status==StatusCode::OK){                                                     // if status is okay
             pObj[j].characteristic->uvSet(pObj[j].characteristic->value,pObj[j].characteristic->newValue);               // update characteristic value with new value
-            if(pObj[j].characteristic->nvsKey){                                                                                               // if storage key found
-              if(pObj[j].characteristic->format != FORMAT::STRING)
-                nvs_set_blob(charNVS,pObj[j].characteristic->nvsKey,&(pObj[j].characteristic->value),sizeof(pObj[j].characteristic->value));  // store data
-              else
-                nvs_set_str(charNVS,pObj[j].characteristic->nvsKey,pObj[j].characteristic->value.STRING);                                     // store data
-              nvs_commit(charNVS);
-            }
             LOG1(" (okay)\n");
           } else {                                                                        // if status not okay
             pObj[j].characteristic->uvSet(pObj[j].characteristic->newValue,pObj[j].characteristic->value);                // replace characteristic new value with original value
@@ -946,7 +928,6 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
           pObj[j].characteristic->isUpdated=false;             // reset isUpdated flag for characteristic
         }
       }
-
     } // object had TBD status
   } // loop over all objects
       
@@ -955,7 +936,7 @@ int Span::updateCharacteristics(char *buf, SpanBuf *pObj){
 
 ///////////////////////////////
 
-void Span::clearNotify(int slotNum){
+void Span::clearNotify(int slotNum) {
   
   for(int i=0;i<Accessories.size();i++){
     for(int j=0;j<Accessories[i]->Services.size();j++){
@@ -1615,3 +1596,5 @@ SpanUserCommand::SpanUserCommand(char c, const char *s, void (*f)(const char *v)
    
   homeSpan.UserCommands[c]=this;
 }
+
+#endif

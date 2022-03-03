@@ -27,6 +27,8 @@
  
 #pragma once
 
+#ifdef ESP32
+
 #include <WiFi.h>
 
 #include "HomeSpan.h"
@@ -152,3 +154,5 @@ struct HAPClient {
 // Extern Variables
 
 extern HAPClient **hap;
+
+#endif

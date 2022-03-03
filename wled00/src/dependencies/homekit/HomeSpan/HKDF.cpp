@@ -25,6 +25,8 @@
  *  
  ********************************************************************************/
 
+#ifdef ESP32
+
 #include <mbedtls/hkdf.h>
 #include <mbedtls/platform_util.h>
 
@@ -215,3 +217,5 @@ int mbedtls_hkdf_expand( const mbedtls_md_info_t *md, const unsigned char *prk,
 
     return( ret );
 }
+
+#endif

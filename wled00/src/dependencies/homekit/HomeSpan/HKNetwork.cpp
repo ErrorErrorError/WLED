@@ -25,6 +25,8 @@
  *  
  ********************************************************************************/
 
+#ifdef ESP32
+
 #include <DNSServer.h>
 
 #include "HKNetwork.h"
@@ -41,3 +43,5 @@ boolean HKNetwork::allowedCode(char *s){
     strcmp(s,"44444444") && strcmp(s,"55555555") && strcmp(s,"66666666") && strcmp(s,"77777777") &&
     strcmp(s,"88888888") && strcmp(s,"99999999") && strcmp(s,"12345678") && strcmp(s,"87654321"));
 }
+
+#endif

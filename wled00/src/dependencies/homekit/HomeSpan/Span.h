@@ -67,7 +67,7 @@ namespace Service {
 // Macro to define Span Characteristic structures based on name of HAP Characteristic, default value, and min/max value (not applicable for STRING or BOOL which default to min=0, max=1)
 
 #define CREATE_CHAR(TYPE,HAPCHAR,DEFVAL,MINVAL,MAXVAL) \
-  struct HAPCHAR : SpanCharacteristic { HAPCHAR(TYPE val=DEFVAL, boolean nvsStore=false) : SpanCharacteristic {&hapChars.HAPCHAR} { init(val,nvsStore,(TYPE)MINVAL,(TYPE)MAXVAL); } };
+  struct HAPCHAR : SpanCharacteristic { HAPCHAR(TYPE val=DEFVAL) : SpanCharacteristic {&hapChars.HAPCHAR} { init(val,(TYPE)MINVAL,(TYPE)MAXVAL); } };
 
 namespace Characteristic {
   CREATE_CHAR(int,Brightness,0,0,100);
@@ -91,8 +91,8 @@ namespace Characteristic {
 
 #define CUSTOM_CHAR(NAME,UUID,PERMISISONS,FORMAT,DEFVAL,MINVAL,MAXVAL,STATIC_RANGE) \
   HapChar _CUSTOM_##NAME {#UUID,#NAME,(PERMS)(PERMISISONS),FORMAT,STATIC_RANGE}; \
-  namespace Characteristic { struct NAME : SpanCharacteristic { NAME(FORMAT##_t val=DEFVAL, boolean nvsStore=false) : SpanCharacteristic {&_CUSTOM_##NAME} { init(val,nvsStore,(FORMAT##_t)MINVAL,(FORMAT##_t)MAXVAL); } }; }
+  namespace Characteristic { struct NAME : SpanCharacteristic { NAME(FORMAT##_t val=DEFVAL) : SpanCharacteristic {&_CUSTOM_##NAME} { init(val,(FORMAT##_t)MINVAL,(FORMAT##_t)MAXVAL); } }; }
 
 #define CUSTOM_CHAR_STRING(NAME,UUID,PERMISISONS,DEFVAL) \
   HapChar _CUSTOM_##NAME {#UUID,#NAME,(PERMS)(PERMISISONS),STRING,true}; \
-  namespace Characteristic { struct NAME : SpanCharacteristic { NAME(const char * val=DEFVAL, boolean nvsStore=false) : SpanCharacteristic {&_CUSTOM_##NAME} { init(val,nvsStore); } }; }
+  namespace Characteristic { struct NAME : SpanCharacteristic { NAME(const char * val=DEFVAL) : SpanCharacteristic {&_CUSTOM_##NAME} { init(val); } }; }
