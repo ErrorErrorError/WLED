@@ -118,9 +118,6 @@ struct Span {
   unsigned long alarmConnect=0;                 // time after which WiFi connection attempt should be tried again
 
   const char *defaultSetupCode=DEFAULT_SETUP_CODE;            // Setup Code used for pairing
-  int statusPin=DEFAULT_STATUS_PIN;                           // pin for Status LED
-  uint16_t autoOffLED=0;                                      // automatic turn-off duration (in seconds) for Status LED
-  int controlPin=DEFAULT_CONTROL_PIN;                         // pin for Control Pushbutton
   uint8_t logLevel=DEFAULT_LOG_LEVEL;                         // level for writing out log messages to serial monitor
   uint8_t maxConnections=CONFIG_LWIP_MAX_SOCKETS-2;           // maximum number of allowed simultaneous HAP connections
   uint8_t requestedMaxCon=CONFIG_LWIP_MAX_SOCKETS-2;          // requested maximum number of simultaneous HAP connections
@@ -137,7 +134,6 @@ struct Span {
   vector<SpanAccessory *> Accessories;              // vector of pointers to all Accessories
   vector<SpanService *> Loops;                      // vector of pointer to all Services that have over-ridden loop() methods
   vector<SpanBuf> Notifications;                    // vector of SpanBuf objects that store info for Characteristics that are updated with setVal() and require a Notification Event
-  vector<SpanButton *> PushButtons;                 // vector of pointer to all PushButtons
   unordered_map<uint64_t, uint32_t> TimedWrites;    // map of timed-write PIDs and Alarm Times (based on TTLs)
 
   unordered_map<char, SpanUserCommand *> UserCommands;           // map of pointers to all UserCommands
@@ -165,10 +161,6 @@ struct Span {
   void clearNotify(int slotNum);                                          // set ev notification flags for connection 'slotNum' to false across all characteristics 
   int sprintfNotify(SpanBuf *pObj, int nObj, char *cBuf, int conNum);     // prints notification JSON into buf based on SpanBuf objects and specified connection number
 
-  void setControlPin(uint8_t pin){controlPin=pin;}                        // sets Control Pin
-  void setStatusPin(uint8_t pin){statusPin=pin;}                          // sets Status Pin
-  void setStatusAutoOff(uint16_t duration){autoOffLED=duration;}          // sets Status LED auto off (seconds)  
-  int getStatusPin(){return(statusPin);}                                  // get Status Pin
   void setCommandTimeout(uint16_t nSec){comModeLife=nSec*1000;}           // sets Command Mode Timeout (seconds)
   void setLogLevel(uint8_t level){logLevel=level;}                        // sets Log Level for log messages (0=baseline, 1=intermediate, 2=all)
   void reserveSocketConnections(uint8_t n){maxConnections-=n;}            // reserves n socket connections *not* to be used for HAP
@@ -557,8 +549,6 @@ struct SpanButton {
   uint16_t longTime;             // minimum time (in millis) required to register a long press
   uint16_t doubleTime;           // maximum time (in millis) between single presses to register a double press instead
   SpanService *service;          // Service to which this PushButton is attached
-
-  PushButton *pushButton;        // PushButton associated with this SpanButton
 
   SpanButton(int pin, uint16_t longTime=2000, uint16_t singleTime=5, uint16_t doubleTime=200);
 };

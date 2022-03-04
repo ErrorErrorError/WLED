@@ -59,11 +59,12 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   if(requestedMaxCon<maxConnections)                          // if specific request for max connections is less than computed max connections
     maxConnections=requestedMaxCon;                           // over-ride max connections with requested value
 
-  hap=(HAPClient **)calloc(maxConnections,sizeof(HAPClient *));
-  for(int i=0;i<maxConnections;i++)
-    hap[i]=new HAPClient;
+  hap = (HAPClient **)calloc(maxConnections, sizeof(HAPClient *));
+  for(int i = 0; i < maxConnections; i++) {
+    hap[i] = new HAPClient;
+  }
 
-  hapServer=new WiFiServer(tcpPortNum);
+  hapServer = new WiFiServer(tcpPortNum);
 
   nvs_flash_init();                             // initialize non-volatile-storage partition in flash  
 
@@ -78,18 +79,6 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   EHK_DEBUG("Message Logs:     Level ");
   EHK_DEBUG(logLevel);  
   EHK_DEBUG("\nStatus LED:       Pin ");
-  if(statusPin>=0){
-    EHK_DEBUG(statusPin);
-    if(autoOffLED>0)
-      EHK_DEBUGF("  (Auto Off=%d sec)",autoOffLED);
-  }
-  else
-    EHK_DEBUG("-  *** WARNING: Status LED Pin is UNDEFINED");
-  EHK_DEBUG("\nDevice Control:   Pin ");
-  if(controlPin>=0)
-    EHK_DEBUG(controlPin);
-  else
-    EHK_DEBUG("-  *** WARNING: Device Control Pin is UNDEFINED");
   EHK_DEBUG("\nHomeSpan Version: ");
   EHK_DEBUG(HOMESPAN_VERSION);
   EHK_DEBUG("\nArduino-ESP Ver.: ");
@@ -97,12 +86,12 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   EHK_DEBUGF("\nESP-IDF Version:  %d.%d.%d",ESP_IDF_VERSION_MAJOR,ESP_IDF_VERSION_MINOR,ESP_IDF_VERSION_PATCH);
   EHK_DEBUGF("\nESP32 Chip:       %s Rev %d %s-core %dMB Flash", ESP.getChipModel(),ESP.getChipRevision(),
                 ESP.getChipCores()==1?"single":"dual",ESP.getFlashChipSize()/1024/1024);
-  
+
   #ifdef ARDUINO_VARIANT
     EHK_DEBUG("\nESP32 Board:      ");
     EHK_DEBUG(ARDUINO_VARIANT);
   #endif
-  
+
   EHK_DEBUGF("\nPWM Resources:    %d channels, %d timers, max %d-bit duty resolution",
                 LEDC_SPEED_MODE_MAX*LEDC_CHANNEL_MAX,LEDC_SPEED_MODE_MAX*LEDC_TIMER_MAX,LEDC_TIMER_BIT_MAX-1);
 
@@ -119,7 +108,7 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   EHK_DEBUG("\n\nDevice Name:      ");
   EHK_DEBUG(displayName);  
   EHK_DEBUG("\n\n");
-}  // begin
+} // begin
 
 ///////////////////////////////
 
@@ -130,66 +119,59 @@ void Span::poll() {
     while(1);    
   }
 
-  if(!isInitialized){
-  
-    if(!homeSpan.Accessories.empty()){
-
-      if(!homeSpan.Accessories.back()->Services.empty())
+  if(!isInitialized) {
+    if(!homeSpan.Accessories.empty()) {
+      if(!homeSpan.Accessories.back()->Services.empty()) {
         homeSpan.Accessories.back()->Services.back()->validate();    
-        
+      }
+
       homeSpan.Accessories.back()->validate();    
     }
 
     checkRanges();
 
-    if(nWarnings>0){
+    if(nWarnings > 0) {
       configLog+="\n*** CAUTION: There " + String((nWarnings>1?"are ":"is ")) + String(nWarnings) + " WARNING" + (nWarnings>1?"S":"") + " associated with this configuration that may lead to the device becoming non-responsive, or operating in an unexpected manner. ***\n";
     }
 
     processSerialCommand("i");        // print homeSpan configuration info
    
-    if(nFatalErrors>0){
+    if(nFatalErrors > 0){
       EHK_DEBUG("\n*** PROGRAM HALTED DUE TO ");
       EHK_DEBUG(nFatalErrors);
       EHK_DEBUG(" FATAL ERROR");
-      if(nFatalErrors>1)
+      if(nFatalErrors > 1) {
         EHK_DEBUG("S");
+      }
       EHK_DEBUG(" IN CONFIGURATION! ***\n\n");
       while(1);
-    }    
+    }
 
     EHK_DEBUG("\n");
-        
+ 
     HAPClient::init();        // load HAP settings  
 
     if(!strlen(network.wifiData.ssid)){
       EHK_DEBUG("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
       EHK_DEBUG("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
     }
-  
+
     EHK_DEBUG(displayName);
     EHK_DEBUG(" is READY!\n\n");
-    isInitialized=true;
+    isInitialized = true;
   } // isInitialized
 
   if(strlen(network.wifiData.ssid)>0){
       checkConnect();
   }
 
-  char cBuf[17]="?";
-  
-  if(Serial.available()){
-    readSerial(cBuf,16);
-    processSerialCommand(cBuf);
-  }
-
   WiFiClient newClient;
 
-  if(newClient=hapServer->available()){                        // found a new HTTP client
-    int freeSlot=getFreeSlot();                                // get next free slot
+  if(newClient = hapServer->available()){                        // found a new HTTP client
+    int freeSlot = getFreeSlot();                                // get next free slot
 
-    if(freeSlot==-1){                                          // no available free slots
-      freeSlot=randombytes_uniform(maxConnections);
+    if(freeSlot == -1){                                          // no available free slots
+      freeSlot = randombytes_uniform(maxConnections);
       LOG2("=======================================\n");
       LOG1("** Freeing Client #");
       LOG1(freeSlot);
@@ -201,13 +183,13 @@ void Span::poll() {
       hap[freeSlot]->client.stop();                     // disconnect client from first slot and re-use
     }
 
-    hap[freeSlot]->client=newClient;             // copy new client handle into free slot
+    hap[freeSlot]->client = newClient;             // copy new client handle into free slot
 
     LOG2("=======================================\n");
     LOG1("** Client #");
     LOG1(freeSlot);
     LOG1(" Connected: (");
-    LOG1(millis()/1000);
+    LOG1(millis() / 1000);
     LOG1(" sec) ");
     LOG1(hap[freeSlot]->client.remoteIP());
     LOG1(" on Socket ");
@@ -217,19 +199,18 @@ void Span::poll() {
     LOG1("\n");
     LOG2("\n");
 
-    hap[freeSlot]->cPair=NULL;                   // reset pointer to verified ID
-    homeSpan.clearNotify(freeSlot);             // clear all notification requests for this connection
-    HAPClient::pairStatus=pairState_M1;         // reset starting PAIR STATE (which may be needed if Accessory failed in middle of pair-setup)
+    hap[freeSlot]->cPair = NULL;                  // reset pointer to verified ID
+    homeSpan.clearNotify(freeSlot);               // clear all notification requests for this connection
+    HAPClient::pairStatus = pairState_M1;         // reset starting PAIR STATE (which may be needed if Accessory failed in middle of pair-setup)
   }
 
-  for(int i=0;i<maxConnections;i++){                     // loop over all HAP Connection slots
-    
+  for(int i = 0;i < maxConnections; i++){                   // loop over all HAP Connection slots
     if(hap[i]->client && hap[i]->client.available()){       // if connection exists and data is available
 
-      HAPClient::conNum=i;                                // set connection number
-      hap[i]->processRequest();                           // process HAP request
-      
-      if(!hap[i]->client){                                 // client disconnected by server
+      HAPClient::conNum = i;                                  // set connection number
+      hap[i]->processRequest();                             // process HAP request
+
+      if(!hap[i]->client){                                  // client disconnected by server
         LOG1("** Disconnecting Client #");
         LOG1(i);
         LOG1("  (");
@@ -238,12 +219,10 @@ void Span::poll() {
       }
 
       LOG2("\n");
-
     } // process HAP Client 
   } // for-loop over connection slots
 
   HAPClient::callServiceLoops();
-  HAPClient::checkPushButtons();
   HAPClient::checkNotifications();  
   HAPClient::checkTimedWrites();    
 } // poll
@@ -251,23 +230,21 @@ void Span::poll() {
 ///////////////////////////////
 
 int Span::getFreeSlot(){
-  
-  for(int i=0;i<maxConnections;i++){
+  for(int i = 0; i < maxConnections; i++){
     if(!hap[i]->client)
       return(i);
   }
 
-  return(-1);          
+  return(-1);
 }
 
 //////////////////////////////////////
 
 void Span::checkConnect(){
-
   if(connected){
     if(WiFi.status()==WL_CONNECTED)
       return;
-      
+
     EHK_DEBUG("\n\n*** WiFi Connection Lost!\n");      // losing and re-establishing connection has not been tested
     connected=false;
     waitTime=60000;
@@ -275,14 +252,14 @@ void Span::checkConnect(){
   }
 
   if(WiFi.status()!=WL_CONNECTED){
-    if(millis()<alarmConnect)         // not yet time to try to try connecting
+    if(millis() < alarmConnect)         // not yet time to try to try connecting
       return;
 
     if(waitTime==60000)
       waitTime=1000;
     else
       waitTime*=2;
-      
+
     if(waitTime==32000){
       EHK_DEBUG("\n*** Can't connect to ");
       EHK_DEBUG(network.wifiData.ssid);
@@ -353,15 +330,15 @@ void Span::checkConnect(){
   EHK_DEBUG(qrID);
   EHK_DEBUG("\n\n");
 
-  MDNS.begin(hostName);                         // set server host name (.local implied)
-  MDNS.setInstanceName(displayName);            // set server display name
-  MDNS.addService("_hap","_tcp",tcpPortNum);    // advertise HAP service on specified port
+  // MDNS.begin(hostName);                         // set server host name (.local implied)
+  // MDNS.setInstanceName(displayName);            // set server display name
+  MDNS.addService("_hap", "_tcp", tcpPortNum);  // advertise HAP service on specified port
 
   // add MDNS (Bonjour) TXT records for configurable as well as fixed values (HAP Table 6-7)
 
   char cNum[16];
   sprintf(cNum,"%d",hapConfig.configNumber);
-  
+
   mdns_service_txt_item_set("_hap","_tcp","c#",cNum);            // Accessory Current Configuration Number (updated whenever config of HAP Accessory Attribute Database is updated)
   mdns_service_txt_item_set("_hap","_tcp","md",modelName);       // Accessory Model Name
   mdns_service_txt_item_set("_hap","_tcp","ci",category);        // Accessory Category (HAP Section 13.1)
@@ -376,9 +353,9 @@ void Span::checkConnect(){
   else
     mdns_service_txt_item_set("_hap","_tcp","sf","0");           // set Status Flag = 0
 
-  mdns_service_txt_item_set("_hap","_tcp","hspn",HOMESPAN_VERSION);           // HomeSpan Version Number (info only - NOT used by HAP)
-  mdns_service_txt_item_set("_hap","_tcp","ard-esp32",ARDUINO_ESP_VERSION);   // Arduino-ESP32 Version Number (info only - NOT used by HAP)
-  mdns_service_txt_item_set("_hap","_tcp","board",ARDUINO_VARIANT);           // Board Name (info only - NOT used by HAP)
+  mdns_service_txt_item_set("_hap", "_tcp", "hspn", HOMESPAN_VERSION);            // HomeSpan Version Number (info only - NOT used by HAP)
+  mdns_service_txt_item_set("_hap", "_tcp", "ard-esp32", ARDUINO_ESP_VERSION);    // Arduino-ESP32 Version Number (info only - NOT used by HAP)
+  mdns_service_txt_item_set("_hap", "_tcp", "board", ARDUINO_VARIANT);            // Board Name (info only - NOT used by HAP)
 
   uint8_t hashInput[22];
   uint8_t hashOutput[64];
@@ -941,7 +918,7 @@ void Span::clearNotify(int slotNum) {
   for(int i=0;i<Accessories.size();i++){
     for(int j=0;j<Accessories[i]->Services.size();j++){
       for(int k=0;k<Accessories[i]->Services[j]->Characteristics.size();k++){
-        Accessories[i]->Services[j]->Characteristics[k]->ev[slotNum]=false;
+        Accessories[i]->Services[j]->Characteristics[k]->ev[slotNum] = false;
       }
     }
   }
@@ -1541,7 +1518,6 @@ SpanCharacteristic *SpanCharacteristic::setValidValues(int n, ...){
 ///////////////////////////////
 
 SpanRange::SpanRange(int min, int max, int step){
-
   if(homeSpan.Accessories.empty() || homeSpan.Accessories.back()->Services.empty() || homeSpan.Accessories.back()->Services.back()->Characteristics.empty() ){
     homeSpan.configLog+="    \u2718 SpanRange: *** ERROR!  Can't create new Range without a defined Characteristic! ***\n";
     homeSpan.nFatalErrors++;
@@ -1578,11 +1554,8 @@ SpanButton::SpanButton(int pin, uint16_t longTime, uint16_t singleTime, uint16_t
     homeSpan.configLog+=" *** WARNING:  No button() method defined for this PushButton! ***";
     homeSpan.nWarnings++;
   }
-
-  pushButton=new PushButton(pin);         // create underlying PushButton
   
   homeSpan.configLog+="\n";  
-  homeSpan.PushButtons.push_back(this);
 }
 
 
@@ -1593,7 +1566,7 @@ SpanButton::SpanButton(int pin, uint16_t longTime, uint16_t singleTime, uint16_t
 SpanUserCommand::SpanUserCommand(char c, const char *s, void (*f)(const char *v)){
   this->s=s;
   userFunction=f;
-   
+
   homeSpan.UserCommands[c]=this;
 }
 
