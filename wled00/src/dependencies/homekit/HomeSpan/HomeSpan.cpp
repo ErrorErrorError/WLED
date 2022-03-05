@@ -56,10 +56,35 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
 
   esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));       // required to avoid watchdog timeout messages from ESP32-C3
 
-  if(requestedMaxCon<maxConnections)                          // if specific request for max connections is less than computed max connections
+  if(requestedMaxCon<maxConnections) {                          // if specific request for max connections is less than computed max connections
     maxConnections=requestedMaxCon;                           // over-ride max connections with requested value
+  }
+
+  if (hap != NULL) {                                          // Delete previous hap clients
+    EHK_DEBUGLN("HAP is not null, so will remove HAP services.");
+    for (int i = 0; i < maxConnections; i++) {
+      HAPClient * hapClient = hap[i];
+      if  (hapClient != NULL) {
+        if (hapClient->client != NULL) {
+          hapClient->client.stop();
+        }
+        delete hapClient;
+        hap[i] = NULL;
+      }
+    }
+
+    delete hap;
+    hap = NULL;
+  }
+
+  if (hapServer != NULL) {
+    hapServer->close();
+    delete hapServer;
+    hapServer = NULL;
+  }
 
   hap = (HAPClient **)calloc(maxConnections, sizeof(HAPClient *));
+
   for(int i = 0; i < maxConnections; i++) {
     hap[i] = new HAPClient;
   }
@@ -71,14 +96,12 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   delay(2000);
 
   EHK_DEBUG("\n************************************************************\n"
-                 "Welcome to HomeSpan!\n"
+                 "Welcome to stripped down version of HomeSpan!\n"
                  "Apple HomeKit for the Espressif ESP-32 WROOM and Arduino IDE\n"
-                 "************************************************************\n\n"
-                 "** Please ensure serial monitor is set to transmit <newlines>\n\n");
+                 "************************************************************\n\n");
 
   EHK_DEBUG("Message Logs:     Level ");
   EHK_DEBUG(logLevel);  
-  EHK_DEBUG("\nStatus LED:       Pin ");
   EHK_DEBUG("\nHomeSpan Version: ");
   EHK_DEBUG(HOMESPAN_VERSION);
   EHK_DEBUG("\nArduino-ESP Ver.: ");
@@ -108,7 +131,15 @@ void Span::begin(Category catID, const char *displayName, const char *hostNameBa
   EHK_DEBUG("\n\nDevice Name:      ");
   EHK_DEBUG(displayName);  
   EHK_DEBUG("\n\n");
+
+  isInitialized = false;
 } // begin
+
+///////////////////////////////
+
+void Span::restart() {
+  connected = false;
+}
 
 ///////////////////////////////
 
@@ -135,7 +166,7 @@ void Span::poll() {
     }
 
     processSerialCommand("i");        // print homeSpan configuration info
-   
+
     if(nFatalErrors > 0){
       EHK_DEBUG("\n*** PROGRAM HALTED DUE TO ");
       EHK_DEBUG(nFatalErrors);
@@ -151,19 +182,12 @@ void Span::poll() {
  
     HAPClient::init();        // load HAP settings  
 
-    if(!strlen(network.wifiData.ssid)){
-      EHK_DEBUG("*** WIFI CREDENTIALS DATA NOT FOUND.  ");
-      EHK_DEBUG("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
-    }
-
     EHK_DEBUG(displayName);
     EHK_DEBUG(" is READY!\n\n");
     isInitialized = true;
   } // isInitialized
 
-  if(strlen(network.wifiData.ssid)>0){
-      checkConnect();
-  }
+  checkConnect();
 
   WiFiClient newClient;
 
@@ -224,7 +248,7 @@ void Span::poll() {
 
   HAPClient::callServiceLoops();
   HAPClient::checkNotifications();  
-  HAPClient::checkTimedWrites();    
+  HAPClient::checkTimedWrites();
 } // poll
 
 ///////////////////////////////
@@ -240,50 +264,26 @@ int Span::getFreeSlot(){
 
 //////////////////////////////////////
 
-void Span::checkConnect(){
-  if(connected){
-    if(WiFi.status()==WL_CONNECTED)
+void Span::checkConnect() {
+  if (connected) {
+    if(WiFi.status() == WL_CONNECTED) {
       return;
-
-    EHK_DEBUG("\n\n*** WiFi Connection Lost!\n");      // losing and re-establishing connection has not been tested
-    connected=false;
-    waitTime=60000;
-    alarmConnect=0;
-  }
-
-  if(WiFi.status()!=WL_CONNECTED){
-    if(millis() < alarmConnect)         // not yet time to try to try connecting
+    } else {
+      connected = false;
       return;
-
-    if(waitTime==60000)
-      waitTime=1000;
-    else
-      waitTime*=2;
-
-    if(waitTime==32000){
-      EHK_DEBUG("\n*** Can't connect to ");
-      EHK_DEBUG(network.wifiData.ssid);
-      EHK_DEBUG(".  You may type 'W <return>' to re-configure WiFi, or 'X <return>' to erase WiFi credentials.  Will try connecting again in 60 seconds.\n\n");
-      waitTime=60000;
-    } else {    
-      EHK_DEBUG("Trying to connect to ");
-      EHK_DEBUG(network.wifiData.ssid);
-      EHK_DEBUG(".  Waiting ");
-      EHK_DEBUG(waitTime/1000);
-      EHK_DEBUG(" second(s) for response...\n");
-      WiFi.begin(network.wifiData.ssid,network.wifiData.pwd);
     }
-
-    alarmConnect=millis()+waitTime;
-
-    return;
+  } else {
+    // It was disconnected so now check again if it's now connected.
+    if (WiFi.status() == WL_CONNECTED) {
+      connected = true;
+    } else {
+      return;
+    }
   }
 
-  connected=true;
+  // Only set value if it was disconnected before and now its connected;
 
-  EHK_DEBUG("Successfully connected to ");
-  EHK_DEBUG(network.wifiData.ssid);
-  EHK_DEBUG("! IP Address: ");
+  EHK_DEBUGF("Successfully connected homekit to %s! IP Address: ", WiFi.SSID().c_str());
   EHK_DEBUG(WiFi.localIP());
   EHK_DEBUG("\n");
 
@@ -296,7 +296,7 @@ void Span::checkConnect(){
   int nChars;
 
   if(!hostNameSuffix)
-    nChars=snprintf(NULL,0,"%s-%.2s%.2s%.2s%.2s%.2s%.2s",hostNameBase,id,id+3,id+6,id+9,id+12,id+15);
+    nChars=snprintf(NULL, 0,"%s-%.2s%.2s%.2s%.2s%.2s%.2s",hostNameBase,id,id+3,id+6,id+9,id+12,id+15);
   else
     nChars=snprintf(NULL,0,"%s%s",hostNameBase,hostNameSuffix);
     
@@ -305,18 +305,18 @@ void Span::checkConnect(){
   if(!hostNameSuffix)
     sprintf(hostName,"%s-%.2s%.2s%.2s%.2s%.2s%.2s",hostNameBase,id,id+3,id+6,id+9,id+12,id+15);
   else
-    sprintf(hostName,"%s%s",hostNameBase,hostNameSuffix);
+    sprintf(hostName, "%s%s", hostNameBase, hostNameSuffix);
 
   char d[strlen(hostName)+1];  
   sscanf(hostName,"%[A-Za-z0-9-]",d);
-  
+
   if(strlen(hostName)>255|| hostName[0]=='-' || hostName[strlen(hostName)-1]=='-' || strlen(hostName)!=strlen(d)){
     EHK_DEBUGF("\n*** Error:  Can't start MDNS due to invalid hostname '%s'.\n",hostName);
     EHK_DEBUG("*** Hostname must consist of 255 or less alphanumeric characters or a hyphen, except that the hyphen cannot be the first or last character.\n");
     EHK_DEBUG("*** PROGRAM HALTED!\n\n");
     while(1);
   }
-    
+ 
   EHK_DEBUG("\nStarting MDNS...\n\n");
   EHK_DEBUG("HostName:      ");
   EHK_DEBUG(hostName);
@@ -330,9 +330,7 @@ void Span::checkConnect(){
   EHK_DEBUG(qrID);
   EHK_DEBUG("\n\n");
 
-  // MDNS.begin(hostName);                         // set server host name (.local implied)
-  // MDNS.setInstanceName(displayName);            // set server display name
-  MDNS.addService("_hap", "_tcp", tcpPortNum);  // advertise HAP service on specified port
+  mdns_service_add(NULL, "_hap", "_tcp", tcpPortNum, NULL, 0);  // advertise HAP service on specified port
 
   // add MDNS (Bonjour) TXT records for configurable as well as fixed values (HAP Table 6-7)
 
@@ -361,7 +359,7 @@ void Span::checkConnect(){
   uint8_t hashOutput[64];
   char setupHash[9];
   size_t len;
-  
+
   memcpy(hashInput,qrID,4);                                           // Create the Seup ID for use with optional QR Codes.  This is an undocumented feature of HAP R2!
   memcpy(hashInput+4,id,17);                                          // Step 1: Concatenate 4-character Setup ID and 17-character Accessory ID into hashInput
   mbedtls_sha512_ret(hashInput,21,hashOutput,0);                      // Step 2: Perform SHA-512 hash on combined 21-byte hashInput to create 64-byte hashOutput
@@ -377,10 +375,6 @@ void Span::checkConnect(){
   if(!HAPClient::nAdminControllers()){
     EHK_DEBUG("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
   }
-
-  if(wifiCallback)
-    wifiCallback();
-  
 } // initWiFi
 
 ///////////////////////////////
@@ -532,22 +526,10 @@ void Span::processSerialCommand(const char *c){
       
       EHK_DEBUG("\nDEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
       mdns_service_txt_item_set("_hap","_tcp","sf","1");                                                        // set Status Flag = 1 (Table 6-8)
-      
-      if(strlen(network.wifiData.ssid)==0)
-        EHK_DEBUG("\nNetwork wifi not set up.");
-      else
-        EHK_DEBUG("\nNetwork wifi is set up.");
     }
     break;
 
     case 'A': {
-      if(strlen(network.wifiData.ssid)>0){
-        EHK_DEBUG("*** Stopping all current WiFi services...\n\n");
-        hapServer->end();
-        MDNS.end();
-        WiFi.disconnect();
-      }
-
       if(strlen(network.setupCode)){
         char s[10];
         sprintf(s,"S%s",network.setupCode);
@@ -681,13 +663,6 @@ void Span::processSerialCommand(const char *c){
     break;
     
   } // switch
-}
-
-///////////////////////////////
-
-void Span::setWifiCredentials(const char *ssid, const char *pwd){
-  sprintf(network.wifiData.ssid,"%.*s",MAX_SSID,ssid);
-  sprintf(network.wifiData.pwd,"%.*s",MAX_PWD,pwd);
 }
 
 ///////////////////////////////
@@ -1073,12 +1048,12 @@ SpanAccessory::SpanAccessory(uint32_t aid){
       EHK_DEBUG(" Accessories.  Program Halting.\n\n");
       while(1);      
     }
-    
+
     this->aid=homeSpan.Accessories.back()->aid+1;
     
     if(!homeSpan.Accessories.back()->Services.empty())
       homeSpan.Accessories.back()->Services.back()->validate();    
-      
+
     homeSpan.Accessories.back()->validate();    
   } else {
     this->aid=1;

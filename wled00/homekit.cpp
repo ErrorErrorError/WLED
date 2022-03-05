@@ -2,8 +2,6 @@
 
 #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
 
-void startHomeKit();
-
 void updateOn(bool on);
 void updateBrightness(int brightness);
 void updateColor(double hue, double sat);
@@ -12,20 +10,38 @@ void homekitInit() {
     if (WLED_CONNECTED) {
         if (homeKitDevice == nullptr) {
             Serial.println("Starting HomeKit");
-            startHomeKit();
-        } else {
-            // TODO: Change SSID info if user changes
-            if (strcmp(clientSSID, homeSpan.network.wifiData.ssid) != 0 ||
-                strcmp(clientPass, homeSpan.network.wifiData.pwd) != 0) {
-                // Stop HomeKit Service, set credentials then restart.
+            homeSpan.setPortNum(8080);
+            homeSpan.begin(Category::Lighting, "WLED Light");
 
-                Serial.println("WiFi credentials changed.");
-                homeSpan.processSerialCommand("");
-                // startHomeKit();
-            }
+            new SpanAccessory();
+                new Service::AccessoryInformation();
+                    new Characteristic::Name("WLED Light");
+                    new Characteristic::Manufacturer("WLED");
+                    new Characteristic::SerialNumber("WLED-111");
+                    new Characteristic::Model("WLED-Device");
+                    new Characteristic::FirmwareRevision("0.1");
+                    new Characteristic::Identify();
+
+                new Service::HAPProtocolInformation();
+                    new Characteristic::Version("1.1.0");
+
+            uint16_t hsv[3] = {0};
+            colorFromRGB(col[0], col[1], col[2], hsv);
+
+            long brightness = map(bri, 0, 255, 0, 100);
+            homeKitDevice = new HomeKitDevice(
+                brightness > 0,
+                brightness,
+                hsv,
+                updateOn,
+                updateBrightness,
+                updateColor
+            );
+        } else {
+            homeSpan.restart();
         }
     } else {
-        Serial.println("WLED not connected to wifi, will not start Homekit.");
+        EHK_DEBUGLN("WLED not connected to wifi, will not start Homekit.");
     }
 }
 
@@ -34,37 +50,6 @@ void handleHomeKit() {
     if (homeKitDevice != nullptr) {
         homeSpan.poll();
     }
-}
-
-void startHomeKit() {
-    homeSpan.setWifiCredentials(clientSSID, clientPass);
-    homeSpan.setPortNum(8080);
-    homeSpan.begin(Category::Lighting, "WLED Light");
-
-    new SpanAccessory();
-        new Service::AccessoryInformation();
-            new Characteristic::Name("WLED Light");
-            new Characteristic::Manufacturer("WLED");
-            new Characteristic::SerialNumber("LED-111");
-            new Characteristic::Model("WLED-Device");
-            new Characteristic::FirmwareRevision("0.1");
-            new Characteristic::Identify();
-
-        new Service::HAPProtocolInformation();
-            new Characteristic::Version("1.1.0");
-
-    uint16_t hsv[3] = {0};
-    colorFromRGB(col[0], col[1], col[2], hsv);
-
-    long brightness = map(bri, 0, 255, 0, 100);
-    homeKitDevice = new HomeKitDevice(
-        brightness > 0,
-        brightness,
-        hsv,
-        updateOn,
-        updateBrightness,
-        updateColor
-    );
 }
 
 // Callbacks

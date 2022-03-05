@@ -33,17 +33,9 @@
 
 using std::unordered_set;
 
-const int MAX_SSID=32;                              // max number of characters in WiFi SSID
-const int MAX_PWD=64;                               // max number of characters in WiFi Password
-
 ///////////////////////////////
 
 struct HKNetwork {
-  struct {
-    char ssid[MAX_SSID+1]="";
-    char pwd[MAX_PWD+1]="";
-  } wifiData;
-
   char setupCode[8+1];  
 
   boolean allowedCode(char *s);                                             // checks if Setup Code is allowed (HAP defines a list of disallowed codes)

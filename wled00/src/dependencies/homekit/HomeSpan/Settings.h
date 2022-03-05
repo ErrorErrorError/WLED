@@ -35,7 +35,7 @@
 //              HomeSpan Version                    //
 
 #define     HS_MAJOR  1
-#define     HS_MINOR  5
+#define     HS_MINOR  0
 #define     HS_PATCH  0
 
 #define     STRINGIFIED(x) _STR(x)
@@ -59,26 +59,19 @@
 //                DEFAULT SETTINGS                  //  
 
 #define     DEFAULT_CATEGORY          Category::Lighting  // change with optional first argument in homeSpan.begin()
-#define     DEFAULT_DISPLAY_NAME      "HomeSpan Server"   // change with optional second argument in homeSpan.begin()
-#define     DEFAULT_HOST_NAME         "HomeSpan"          // change with optional third argument in homeSpan.begin()
-#define     DEFAULT_MODEL_NAME        "HomeSpan-ESP32"    // change with optional fourth argument in homeSpan.begin()
+#define     DEFAULT_DISPLAY_NAME      "WLED Server"       // change with optional second argument in homeSpan.begin()
+#define     DEFAULT_HOST_NAME         "WLED"          // change with optional third argument in homeSpan.begin()
+#define     DEFAULT_MODEL_NAME        "WLED-ESP32"    // change with optional fourth argument in homeSpan.begin()
 
 #define     DEFAULT_SETUP_CODE        "46637726"          // changed during network setup or with 'S' command
 
 #define     DEFAULT_QR_ID             "HSPN"              // change with homeSpan.setQRID(qrID);
 
-#define     DEFAULT_CONTROL_PIN       -1                  // change with homeSpan.setControlPin(pin)
-#define     DEFAULT_STATUS_PIN        -1                  // change with homeSpan.setStatusPin(pin)
-
-#define     DEFAULT_AP_SSID           "HomeSpan-Setup"    // change with homeSpan.setApSSID(ssid)
-#define     DEFAULT_AP_PASSWORD       "homespan"          // change with homeSpan.setApPassword(pwd)
-
-#define     DEFAULT_AP_TIMEOUT        300                 // change with homeSpan.setApTimeout(nSeconds)
 #define     DEFAULT_COMMAND_TIMEOUT   120                 // change with homeSpan.setCommandTimeout(nSeconds)
 
 #define     DEFAULT_LOG_LEVEL         0                   // change with homeSpan.setLogLevel(level)
 
-#define     DEFAULT_TCP_PORT          80                  // change with homeSpan.setPort(port);
+#define     DEFAULT_TCP_PORT          8080                // change with homeSpan.setPort(port);
 
 /////////////////////////////////////////////////////
 //              STATUS LED SETTINGS                //
