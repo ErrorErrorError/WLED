@@ -8,37 +8,19 @@ void updateColor(double hue, double sat);
 
 void homekitInit() {
     if (WLED_CONNECTED) {
-        if (homeKitDevice == nullptr) {
-            Serial.println("Starting HomeKit");
-            homeSpan.setPortNum(8080);
-            homeSpan.begin(Category::Lighting, "WLED Light");
-
-            new SpanAccessory();
-                new Service::AccessoryInformation();
-                    new Characteristic::Name("WLED Light");
-                    new Characteristic::Manufacturer("WLED");
-                    new Characteristic::SerialNumber("WLED-111");
-                    new Characteristic::Model("WLED-Device");
-                    new Characteristic::FirmwareRevision("0.1");
-                    new Characteristic::Identify();
-
-                new Service::HAPProtocolInformation();
-                    new Characteristic::Version("1.1.0");
-
+        if (homekit_device == nullptr) {
+            EHK_DEBUGLN("Starting HomeKit Server.");
             uint16_t hsv[3] = {0};
             colorFromRGB(col[0], col[1], col[2], hsv);
-
-            long brightness = map(bri, 0, 255, 0, 100);
-            homeKitDevice = new HomeKitDevice(
-                brightness > 0,
-                brightness,
-                hsv,
-                updateOn,
-                updateBrightness,
-                updateColor
-            );
+            uint16_t hue = hsv[0];
+            uint8_t sat = map(hsv[1], 0, 255, 0, 100);
+            uint8_t brightness = map(bri, 0, UINT8_MAX, 0, 100);
+            homekit_device = new HKDevice(brightness > 0, hue, sat, brightness, updateOn, updateBrightness, updateColor);
+            homekit_server.add_device(homekit_device);
+            homekit_server.begin();
         } else {
-            homeSpan.restart();
+            // Any changes to mdns host name, or wifi change will need to reconfigure mdns
+            homekit_server.reconnect();
         }
     } else {
         EHK_DEBUGLN("WLED not connected to wifi, will not start Homekit.");
@@ -47,9 +29,7 @@ void homekitInit() {
 
 void handleHomeKit() {
     if (!WLED_CONNECTED) return;
-    if (homeKitDevice != nullptr) {
-        homeSpan.poll();
-    }
+    homekit_server.poll();
 }
 
 // Callbacks

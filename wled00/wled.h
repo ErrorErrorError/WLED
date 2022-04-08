@@ -123,7 +123,7 @@
 #include "src/dependencies/json/ArduinoJson-v6.h"
 
 #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
-  #include "src/dependencies/homekit/HomeKitDevice.h"
+  #include "src/dependencies/homekit/HKServer.h"
 #endif
 
 // ESP32-WROVER features SPI RAM (aka PSRAM) which can be allocated using ps_malloc()
@@ -567,7 +567,8 @@ WLED_GLOBAL String escapedMac;
 // HomeKit
 
 #if !defined(WLED_DISABLE_HOMEKIT) && defined(ARDUINO_ARCH_ESP32)
-  WLED_GLOBAL HomeKitDevice* homeKitDevice;
+  WLED_GLOBAL HKServer homekit_server;
+  WLED_GLOBAL HKDevice * homekit_device;
 #endif
 
 // dns server
