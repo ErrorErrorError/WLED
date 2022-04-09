@@ -99,15 +99,6 @@ const char * HTTPMethod_to_str(HTTPMethod method) {
     return "Unknown";
 }
 
-char * str_parse(const char * src, size_t len) {
-    char * ret_val = new char[len + 1];
-    if (!strncpy(ret_val, src, len)) {
-        return NULL;
-    }
-    ret_val[len] = '\0';
-    return ret_val;
-}
-
 HKUri parse_path_request(const char * http_buf) {
     static const char * pair_setup_uri = "/pair-setup";
     static const char * pair_verify_uri = "/pair-verify";

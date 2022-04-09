@@ -27,7 +27,7 @@ TLV::TLV(){
 
 TLV::~TLV() {
   while (numTags > 0) {
-    free(tlv[numTags - 1].val); // free any allocated memory
+    delete[] tlv[numTags - 1].val;
     numTags--;
   }
 }

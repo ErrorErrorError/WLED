@@ -40,10 +40,13 @@ bool HKClient::session_verified() {
     return secured_pairing->allocated;
 }
 
-
 bool HKClient::payload_available() {
     return client && client.available();
 }
+
+//////////////////////
+//  Handle new data //
+//////////////////////
 
 void HKClient::process_request() {
     if (!client || !client.available()) {
@@ -64,7 +67,7 @@ void HKClient::process_request() {
         http_len = client.readBytes(http_buf, buf_len);
     }
 
-    if (http_len == 0) {
+    if (!http_len) {
         EHK_DEBUG("HTTP Buffer is null/empty.");
         send_bad_request();
         return;
@@ -84,57 +87,55 @@ void HKClient::process_request() {
     EHK_DEBUGF("URI: %s\n", HKUri_to_str(path));
     EHK_DEBUGF("Method: %s\n", HTTPMethod_to_str(method));
 
-    if (path == HKUri::PAIR_SETUP && method == HTTPMethod::POST) {
+    if (method == HTTPMethod::POST || method == HTTPMethod::PUT) {
         size_t http_body_len = parse_content_len(http_buf, http_len);
         char http_body[http_body_len + 1];
-        int parsed_ret = parse_body_request(http_body, http_buf, http_body_len);
-        if (parsed_ret) {
-            send_bad_request();
-        } else {
-            post_pair_setup_request((const uint8_t *) http_body, http_body_len);
-        }
-    } else if(path == HKUri::PAIR_VERIFY && method == HTTPMethod::POST) {
-        size_t http_body_len = parse_content_len(http_buf, http_len);
-        char http_body[http_body_len + 1];
-        int parsed_ret = parse_body_request(http_body, http_buf, http_body_len);
-        if (parsed_ret) {
-            send_bad_request();
-        } else {
-            post_pair_verify_request((const uint8_t *) http_body, http_body_len);
-        }
-    } else if (path == HKUri::ACCESSORIES && method == HTTPMethod::GET) {
-        get_accessories_request();
-    } else if (path == HKUri::CHARACTERISTICS && method == HTTPMethod::PUT) {
-        size_t http_body_len = parse_content_len(http_buf, http_len);
-        char http_body[http_body_len + 1];
-        int parsed_ret = parse_body_request(http_body, http_buf, http_body_len);
-        if (parsed_ret) {
-            send_bad_request();
-        } else {
-            put_characteristics_request(http_body, http_body_len);
-        }
-    } else if (path == HKUri::CHARACTERISTICS && method == HTTPMethod::GET) {
-        int ids_count = parse_characteristics_query_count(http_buf);
-        if (ids_count == -1) {
+        int parse_failed = parse_body_request(http_body, http_buf, http_body_len);
+        if (parse_failed) {
             send_bad_request();
             return;
         }
 
-        int ids[ids_count];
-        if (parse_characteristics_query(ids, ids_count, http_buf)) {
-            send_bad_request();
-            return;
-        }
-
-        get_characteristics(ids, ids_count);
-    } else if (path == HKUri::PAIRINGS && method == HTTPMethod::POST) {
-        size_t http_body_len = parse_content_len(http_buf, http_len);
-        char http_body[http_body_len + 1];
-        int parsed_ret = parse_body_request(http_body, http_buf, http_body_len);
-        if (parsed_ret) {
-            send_bad_request();
-        } else {
-            post_pairings_request((uint8_t *) http_body, http_body_len);
+        switch (path) {
+            case HKUri::PAIR_SETUP:
+                post_pair_setup_request((const uint8_t *) http_body, http_body_len);
+                break;
+            case HKUri::PAIR_VERIFY:
+                post_pair_verify_request((const uint8_t *) http_body, http_body_len);
+                break;
+            case HKUri::PAIRINGS:
+                post_pairings_request((const uint8_t *) http_body, http_body_len);
+                break;
+            case HKUri::CHARACTERISTICS:
+                put_characteristics_request(http_body, http_body_len);
+                break;
+            default:
+                send_not_found_request();
+                break;
+        };
+    } else if (method == HTTPMethod::GET) {
+        switch (path) {
+            case HKUri::ACCESSORIES:
+                get_accessories_request();
+                break;   
+            case HKUri::CHARACTERISTICS:
+            {
+                int ids_count = parse_characteristics_query_count(http_buf);
+                if (ids_count == -1) {
+                    send_bad_request();
+                    return;
+                }
+                int ids[ids_count];
+                if (parse_characteristics_query(ids, ids_count, http_buf)) {
+                    send_bad_request();
+                    return;
+                }
+                get_characteristics(ids, ids_count);
+                break;
+            }
+            default:
+                send_not_found_request();
+                break;
         }
     }
 }
@@ -149,19 +150,14 @@ void HKClient::post_pair_setup_request(const uint8_t *data, size_t len) {
     auto& hk_store = HKStore::get_instance();
 
     TLV tlv8;
-
     int unpacked = tlv8.deserialize(data, len);
-
     if (!unpacked) {
         EHK_DEBUGLN("THERE WAS AN ERROR UNPACKING TLV!!!!");
         send_bad_request();
         return;
     }
 
-    // tlv8.print();
-
     int tlv_state = tlv8.val(kTLVType_State);
-
     if(tlv_state == -1) {
         EHK_DEBUGLN("*** ERROR: Missing <M#> State TLV");
         send_bad_request();
@@ -428,8 +424,6 @@ void HKClient::post_pair_setup_request(const uint8_t *data, size_t len) {
 
             tlv8.val(kTLVType_State, pairState_M6);                 // set State=<M6>
             tlv8.buf(kTLVType_EncryptedData, encrypted_len);        // set length of EncryptedData TLV record, which should now include the Authentication Tag at the end as required by HAP
-
-            // tlv8.print();
 
             send_tlv_response(&tlv8);                               // send response to client
 
@@ -867,9 +861,7 @@ void HKClient::put_characteristics_request(const char * buf, size_t buf_len) {
     auto& hk_store = HKStore::get_instance();
 
     char * output_buf = NULL;
-
     int output_buf_len = hk_store.deserialize_characteristics(buf, buf_len, output_buf);
-
     if (output_buf_len > 0) {
         char * header = NULL;
         EHK_DEBUGLN("There were errors present when putting values in characteristics.");

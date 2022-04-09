@@ -356,7 +356,7 @@ int HKStore::deserialize_characteristics(const char * json_buf, size_t json_buf_
 
         int status = 0;
         if ((status = characteristic->deserialize_json(json_char_obj)) != SUCCESS) {
-            // Todo, write error here.
+            // write error here.
             json_char_obj.clear();
             json_char_obj["aid"] = aid;
             json_char_obj["iid"] = iid;
@@ -403,7 +403,6 @@ char * HKStore::serialize_characteristics(int * json_len, const int * ids, size_
     #endif
 
     JsonArray json_characteristics = doc.createNestedArray("characteristics");
-
     for (int i = 0; i < ids_size; i++) {
         int char_iid = ids[i];
         HAPCharacteristic * characteristic = get_characteristic(char_iid);
@@ -420,14 +419,34 @@ char * HKStore::serialize_characteristics(int * json_len, const int * ids, size_
     char * output = new char[size + 1];
     serializeJson(doc, output, size);
     output[size] = '\0';
-
     *json_len = size;
-
     releaseJSONBufferLock();
     return output;
 }
 
 char * HKStore::serialize_events(int * json_len) {
+    bool should_send_ev_notif = false;
+    const vector<HKService *>& services = accessory->getServices();
+
+    // Check if it's even necessary before locking json.
+    for (int i = 0; i < services.size(); i++) {
+        HKService * service = services.at(i);
+        const vector<HAPCharacteristic *>& characteristics = service->getCharacteristics();
+        for (int j = 0; j < characteristics.size(); j++) {
+            HAPCharacteristic * characteristic = characteristics.at(j);
+            if (characteristic->can_send_ev_notif() && characteristic->updated_value) {
+                should_send_ev_notif = true;
+                break;
+            }
+        }
+    }
+
+    if (!should_send_ev_notif) { 
+        // do not lock json buffer if not necessary
+        *json_len = 0;
+        return NULL; 
+    }
+
     #ifdef WLED_USE_DYNAMIC_JSON
     DynamicJsonDocument doc(JSON_BUFFER_SIZE);
     #else
@@ -435,8 +454,7 @@ char * HKStore::serialize_events(int * json_len) {
     #endif
 
     JsonArray json_characteristics = doc.createNestedArray("characteristics");
-    const vector<HKService *>& services = accessory->getServices();
-    int char_req_upd_count = 0;
+
     for (int i = 0; i < services.size(); i++) {
         HKService * service = services.at(i);
         const vector<HAPCharacteristic *>& characteristics = service->getCharacteristics();
@@ -444,28 +462,20 @@ char * HKStore::serialize_events(int * json_len) {
         for (int j = 0; j < characteristics.size(); j++) {
             HAPCharacteristic * characteristic = characteristics.at(j);
 
-            if (characteristic->updated_value) {
-                characteristic->updated_value = false;
+            if (characteristic->can_send_ev_notif() && characteristic->updated_value) {
                 JsonObject json_char = json_characteristics.createNestedObject();
                 json_char["aid"] = accessory->aid;
                 json_char["iid"] = characteristic->getId();
                 json_char["value"] = characteristic->getValue();                
-                char_req_upd_count++;
+                characteristic->updated_value = false;
             }
         }
     }
 
-    char * json = NULL;
     int size = measureJson(doc);
-
-    if (char_req_upd_count > 0) {
-        json = new char[size + 1];
-        serializeJson(doc, json, size);
-        json[size] = '\0';        
-    } else {
-        size = 0;
-    }
-
+    char * json = new char[size + 1];;
+    serializeJson(doc, json, size);
+    json[size] = '\0';        
     *json_len = size;
     releaseJSONBufferLock();
     return json;

@@ -47,8 +47,6 @@ typedef enum {
     SECONDS
 } CharUnit;
 
-// Feature that represents data or an associated behavior of
-// a service.
 class HAPCharacteristic {
     union CharValue {
         bool BOOL;
@@ -58,7 +56,6 @@ class HAPCharacteristic {
     };
 
    private:
-    // Required for HAP
     uint16_t iid;
     const char *type;  // Characteristic Type
     CharValue value;
@@ -172,6 +169,8 @@ class HAPCharacteristic {
         }
     }
 
+    bool can_send_ev_notif() { return event_notif; }
+
     template <typename T>
     void setValue(T val, bool notify = true) {
         if ((perms & CharPerms::PW) == 0) {
@@ -185,10 +184,6 @@ class HAPCharacteristic {
 
         internalSet(value, val);
         EHK_DEBUGF("Updating value for %s\n", hapName);
-
-        // if (notify) {
-        //     // TODO: - Notify to update devices with new values
-        // }
     }
 
     void setString(const char *val) {
@@ -308,7 +303,6 @@ class HAPCharacteristic {
 
     HAPStatus deserialize_json(JsonObject obj) {
         if (obj.containsKey("ev")) {
-            // TODO: Set event
             if (perms & CharPerms::EV) {
                 event_notif = obj["ev"].as<bool>();
             } else {
@@ -334,7 +328,9 @@ class HAPCharacteristic {
                     default:
                         break;
                 }
-                updated_value = true;
+                if (event_notif) {
+                    updated_value = true;
+                }
             } else {
                 // Need write permission
                 return HAPStatus::READ_ONLY_CHARACTERISTIC;
